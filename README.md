@@ -9,7 +9,6 @@ This project includes a `package.json` for easy deployment on Render.
 ## Local Development
 
 ```bash
-npm install
 npm start
 ```
 

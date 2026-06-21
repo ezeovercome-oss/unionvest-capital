@@ -2,11 +2,16 @@
   "name": "unionvest-capital",
   "version": "1.0.0",
   "description": "Premium Investment Platform Demo",
-  "main": "index.html",
+  "main": "main.html",
   "scripts": {
-    "start": "node -e "const http=require('http');const fs=require('fs');const path=require('path');const server=http.createServer((req,res)=>{let filePath='.'+req.url;if(filePath==='./')filePath='./index.html';const ext=String(path.extname(filePath)).toLowerCase();const mimeTypes={'html':'text/html','js':'text/javascript','css':'text/css','json':'application/json','png':'image/png','jpg':'image/jpg','gif':'image/gif','svg':'image/svg+xml','wav':'audio/wav','mp4':'video/mp4','woff':'application/font-woff','ttf':'application/font-ttf','eot':'application/vnd.ms-fontobject','otf':'application/font-otf','wasm':'application/wasm'};const contentType=mimeTypes[ext]||'application/octet-stream';fs.readFile(filePath,(error,content)=>{if(error){if(error.code==='ENOENT'){fs.readFile('./index.html',(err,content)=>{res.writeHead(200,{'Content-Type':'text/html'});res.end(content,'utf-8');});}else{res.writeHead(500);res.end('Server Error');}}else{res.writeHead(200,{'Content-Type':contentType});res.end(content,'utf-8');}});});server.listen(process.env.PORT||8080);console.log('Server running on port '+(process.env.PORT||8080));""
+    "start": "npx serve -s . -l $PORT",
+    "build": "echo 'Static site - no build needed'"
   },
-  "keywords": ["investment", "platform", "demo"],
-  "author": "ezeove",
+  "dependencies": {
+    "serve": "^14.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "license": "BSL-1.0"
 }

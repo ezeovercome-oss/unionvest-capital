@@ -160,18 +160,34 @@ body{font-family:'Inter',sans-serif;background:var(--bg-dark);color:var(--text-p
 <body>
 <div id="app"></div>
 <script>
-let currentUser=JSON.parse(localStorage.getItem('uv_user'))||null;
+let currentUser=null;
 let currentPage='landing';
-let toasts=[];
 let chatOpen=false;
-let chatMessages=[{type:'bot',text:'Hello! I am your AI Investment Assistant. Ask me about investments, deposits, withdrawals, or referrals.'}];
+let chatMessages=[{type:'bot',text:'Welcome to UnionVest Capital AI Assistant. Ask me about investments, deposits, withdrawals, or referrals.'}];
 let walletTab='overview';
 let selectedCrypto='BTC';
-let adminTab='overview';
+let adminTab='users';
 let simAmount=1000;
 let simPlan='premium';
 let showInvestModal=false;
 let investModalPlan=null;
+let toastId=0;
+
+let usersDB = [
+  {id:1, name:'John Doe', email:'john@example.com', role:'investor', balance:25400, status:'active', joined:'Jun 15, 2026', lastLogin:'Today'},
+  {id:2, name:'Sarah Smith', email:'sarah@example.com', role:'investor', balance:18750, status:'active', joined:'Jun 10, 2026', lastLogin:'Yesterday'},
+  {id:3, name:'Mike Johnson', email:'mike@example.com', role:'investor', balance:5200, status:'pending', joined:'Jun 20, 2026', lastLogin:'Today'},
+  {id:4, name:'Admin User', email:'admin@unionvest.com', role:'admin', balance:0, status:'active', joined:'Jun 1, 2026', lastLogin:'Today'}
+];
+
+let pendingTransactions = [
+  {id:101, user:'John Doe', email:'john@example.com', type:'deposit', amount:2500, method:'Bitcoin', status:'pending', date:'Today, 10:23 AM'},
+  {id:102, user:'Sarah Smith', email:'sarah@example.com', type:'withdraw', amount:800, method:'Bank Transfer', status:'pending', date:'Today, 9:45 AM'},
+  {id:103, user:'Mike Johnson', email:'mike@example.com', type:'deposit', amount:5000, method:'USDT', status:'pending', date:'Jun 16, 2026'}
+];
+
+let pendingTxId = 104;
+
 
 const plans=[
   {id:'starter',name:'Starter',roi:5,duration:7,min:100,max:999,color:'#606070'},
@@ -217,6 +233,111 @@ function openInvestModal(planId){investModalPlan=plans.find(p=>p.id===planId);sh
 function closeInvestModal(){showInvestModal=false;investModalPlan=null;render()}
 function confirmInvest(){const amount=document.getElementById('investAmount').value;if(!amount||Number(amount)<investModalPlan.min){addToast('Minimum investment for '+investModalPlan.name+' is $'+investModalPlan.min,'error');return}addToast('Successfully invested $'+Number(amount).toLocaleString()+' in '+investModalPlan.name+' plan!','success');closeInvestModal()}
 function copyAddress(addr){navigator.clipboard.writeText(addr);addToast('Address copied to clipboard','success')}
+function submitDeposit(){
+  const amount = parseFloat(document.getElementById('depAmount').value);
+  const method = document.getElementById('depMethod').value;
+  if(!amount || amount < 10){
+    addToast('Minimum deposit is $10','error');
+    return;
+  }
+  const fee = method === 'card' ? amount * 0.025 : method === 'paypal' ? amount * 0.03 : 0;
+  const total = amount + fee;
+  
+  const methodNames = {bank:'Bank Transfer',card:'Credit/Debit Card',paypal:'PayPal',crypto:'Cryptocurrency'};
+  const newTx = {
+    type:'deposit',
+    title: method === 'crypto' ? selectedCrypto + ' Deposit' : methodNames[method] + ' Deposit',
+    desc: method === 'crypto' ? selectedCrypto + ' Network' : methodNames[method],
+    amount: amount,
+    date: 'Just now',
+    positive: true
+  };
+  
+  const usdWallet = wallets.find(w => w.currency === 'USD');
+  if(usdWallet) usdWallet.balance += amount;
+  
+  addToast('Deposit of $' + amount.toLocaleString() + ' submitted successfully!','success');
+  walletTab = 'overview';
+  render();
+}
+
+function submitWithdrawal(){
+  const amount = parseFloat(document.getElementById('wdAmount').value);
+  const method = document.getElementById('wdMethod').value;
+  const address = document.getElementById('wdAddress').value;
+  
+  if(!amount || amount < 50){
+    addToast('Minimum withdrawal is $50','error');
+    return;
+  }
+  if(!address){
+    addToast('Please enter a destination address','error');
+    return;
+  }
+  
+  const usdWallet = wallets.find(w => w.currency === 'USD');
+  if(!usdWallet || usdWallet.balance < amount){
+    addToast('Insufficient balance','error');
+    return;
+  }
+  
+  usdWallet.balance -= amount;
+  
+  const methodNames = {bank:'Bank Transfer',crypto:'Cryptocurrency',paypal:'PayPal'};
+  addToast('Withdrawal of $' + amount.toLocaleString() + ' submitted! Processing within 24h.','success');
+  walletTab = 'overview';
+  render();
+}
+
+function adminCreditUser(userId){
+  const user = usersDB.find(u => u.id === userId);
+  if(!user) return;
+  const amount = prompt('Credit amount for ' + user.name + ' ($' + user.balance.toLocaleString() + '):', '100');
+  if(!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
+  const amt = parseFloat(amount);
+  user.balance += amt;
+  addToast('Credited $' + amt.toLocaleString() + ' to ' + user.name, 'success');
+  render();
+}
+
+function adminDebitUser(userId){
+  const user = usersDB.find(u => u.id === userId);
+  if(!user) return;
+  const amount = prompt('Debit amount from ' + user.name + ' ($' + user.balance.toLocaleString() + '):', '100');
+  if(!amount || isNaN(amount) || parseFloat(amount) <= 0) return;
+  const amt = parseFloat(amount);
+  if(amt > user.balance){
+    addToast('Insufficient user balance', 'error');
+    return;
+  }
+  user.balance -= amt;
+  addToast('Debited $' + amt.toLocaleString() + ' from ' + user.name, 'success');
+  render();
+}
+
+function adminApproveTx(txId){
+  const tx = pendingTransactions.find(t => t.id === txId);
+  if(!tx) return;
+  const user = usersDB.find(u => u.email === tx.email);
+  if(tx.type === 'deposit' && user){
+    user.balance += tx.amount;
+  }
+  tx.status = 'approved';
+  addToast('Transaction #' + txId + ' approved', 'success');
+  render();
+}
+
+function adminRejectTx(txId){
+  const tx = pendingTransactions.find(t => t.id === txId);
+  if(!tx) return;
+  const user = usersDB.find(u => u.email === tx.email);
+  if(tx.type === 'withdraw' && user){
+    user.balance += tx.amount;
+  }
+  tx.status = 'rejected';
+  addToast('Transaction #' + txId + ' rejected', 'error');
+  render();
+}
 
 function render(){
   const app=document.getElementById('app');
@@ -292,8 +413,21 @@ function renderInvestments(){
 }
 
 function renderWallet(){
-  return `<div class="page"><div class="page-header"><h1>Multi-Currency Wallet</h1><p>Manage your balances across fiat and crypto currencies.</p></div><div class="wallet-tabs"><button class="wallet-tab ${walletTab==='overview'?'active':''}" onclick="walletTab='overview';render();"><i class="fas fa-wallet" style="margin-right:6px"></i>Overview</button><button class="wallet-tab ${walletTab==='deposit'?'active':''}" onclick="walletTab='deposit';render();"><i class="fas fa-arrow-down" style="margin-right:6px"></i>Deposit</button><button class="wallet-tab ${walletTab==='withdraw'?'active':''}" onclick="walletTab='withdraw';render();"><i class="fas fa-arrow-up" style="margin-right:6px"></i>Withdraw</button><button class="wallet-tab ${walletTab==='crypto'?'active':''}" onclick="walletTab='crypto';render();"><i class="fab fa-bitcoin" style="margin-right:6px"></i>Crypto</button></div>${walletTab==='overview'?`<div class="wallet-grid">${wallets.map(w=>`<div class="wallet-card"><div class="wallet-header"><div class="wallet-currency"><span style="font-size:1.4rem">${w.flag}</span><span>${w.currency}</span></div><span style="font-size:0.75rem;color:var(--text-muted)">${w.currency==='USD'?'Primary':''}</span></div><div class="wallet-balance">${w.symbol}${w.balance.toLocaleString(undefined,{minimumFractionDigits:w.balance<1?4:2})}</div><div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:12px">≈ $${(w.balance*(w.currency==='BTC'?68000:w.currency==='ETH'?3600:w.currency==='EUR'?1.08:w.currency==='GBP'?1.27:w.currency==='USDT'?1:1)).toLocaleString(undefined,{maximumFractionDigits:0})} USD</div><div class="wallet-actions"><button class="btn-deposit" onclick="walletTab='deposit';render();"><i class="fas fa-plus" style="margin-right:4px"></i>Deposit</button><button class="btn-withdraw" onclick="walletTab='withdraw';render();"><i class="fas fa-minus" style="margin-right:4px"></i>Withdraw</button></div></div>`).join('')}</div>`:walletTab==='deposit'?`<div class="panel"><div class="panel-header"><h3 class="panel-title"><i class="fas fa-arrow-down" style="color:var(--success);margin-right:10px"></i>Deposit Funds</h3></div><div class="form-group"><label>Amount (USD)</label><input type="number" placeholder="Enter amount" id="depAmount"></div><div class="form-group"><label>Payment Method</label><select><option>Bank Transfer (Wire)</option><option>Credit/Debit Card</option><option>PayPal</option><option>Cryptocurrency</option></select></div><button class="btn-gold" onclick="addToast('Deposit request submitted for review','success');walletTab='overview';render();"><i class="fas fa-paper-plane" style="margin-right:8px"></i>Submit Deposit Request</button></div>`:walletTab==='withdraw'?`<div class="panel"><div class="panel-header"><h3 class="panel-title"><i class="fas fa-arrow-up" style="color:var(--danger);margin-right:10px"></i>Withdraw Funds</h3></div><div class="form-group"><label>Amount (USD)</label><input type="number" placeholder="Enter amount" id="wdAmount"></div><div class="form-group"><label>Withdrawal Method</label><select><option>Bank Transfer</option><option>Cryptocurrency</option><option>PayPal</option></select></div><div class="form-group"><label>Destination Address</label><input type="text" placeholder="Enter wallet address or account number"></div><button class="btn-gold" onclick="addToast('Withdrawal request submitted','success');walletTab='overview';render();"><i class="fas fa-paper-plane" style="margin-right:8px"></i>Request Withdrawal</button></div>`:`<div class="panel"><div class="panel-header"><h3 class="panel-title"><i class="fab fa-bitcoin" style="color:var(--gold);margin-right:10px"></i>Crypto Deposit</h3></div><div class="crypto-options">${cryptoOptions.map(c=>`<button class="crypto-option ${selectedCrypto===c.symbol?'active':''}" onclick="selectedCrypto='${c.symbol}';render();"><i class="fab fa-${c.symbol.toLowerCase()==='btc'?'bitcoin':c.symbol.toLowerCase()==='eth'?'ethereum':'coins'}"></i> ${c.name}</button>`).join('')}</div><div class="qr-section"><div class="qr-placeholder"><i class="fas fa-qrcode" style="font-size:3rem;color:#0a0a0f"></i></div><p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px">Send ${selectedCrypto} to this address</p><div class="referral-link-box"><input type="text" value="${cryptoOptions.find(c=>c.symbol===selectedCrypto).address}" readonly><button class="btn-gold" onclick="copyAddress('${cryptoOptions.find(c=>c.symbol===selectedCrypto).address}')"><i class="fas fa-copy"></i></button></div></div></div>`}</div>`;
+  let depositContent = '';
+  
+  if(walletTab === 'overview'){
+    depositContent = `<div class="wallet-grid">${wallets.map(w=>`<div class="wallet-card"><div class="wallet-header"><div class="wallet-currency"><span style="font-size:1.4rem">${w.flag}</span><span>${w.currency}</span></div><span style="font-size:0.75rem;color:var(--text-muted)">${w.currency==='USD'?'Primary':''}</span></div><div class="wallet-balance">${w.symbol}${w.balance.toLocaleString(undefined,{minimumFractionDigits:w.balance<1?4:2})}</div><div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:12px">≈ $${(w.balance*(w.currency==='BTC'?68000:w.currency==='ETH'?3600:w.currency==='EUR'?1.08:w.currency==='GBP'?1.27:w.currency==='USDT'?1:1)).toLocaleString(undefined,{maximumFractionDigits:0})} USD</div><div class="wallet-actions"><button class="btn-deposit" onclick="walletTab='deposit';render();"><i class="fas fa-plus" style="margin-right:4px"></i>Deposit</button><button class="btn-withdraw" onclick="walletTab='withdraw';render();"><i class="fas fa-minus" style="margin-right:4px"></i>Withdraw</button></div></div>`).join('')}</div>`;
+  } else if(walletTab === 'deposit'){
+    depositContent = `<div class="panel"><div class="panel-header"><h3 class="panel-title"><i class="fas fa-arrow-down" style="color:var(--success);margin-right:10px"></i>Deposit Funds</h3></div><div class="form-group"><label>Amount (USD)</label><input type="number" placeholder="Enter amount" id="depAmount" min="10" step="1"></div><div class="form-group"><label>Payment Method</label><select id="depMethod"><option value="bank">Bank Transfer (Wire)</option><option value="card">Credit/Debit Card</option><option value="paypal">PayPal</option><option value="crypto">Cryptocurrency</option></select></div><div class="form-group" id="cryptoSelect" style="display:none"><label>Select Cryptocurrency</label><select id="depCrypto"><option value="BTC">Bitcoin (BTC)</option><option value="ETH">Ethereum (ETH)</option><option value="USDT">Tether (USDT)</option></select></div><div id="depositSummary" style="background:var(--bg-elevated);padding:16px;border-radius:12px;margin-bottom:20px;display:none"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--text-secondary)">Amount:</span><span style="font-weight:700" id="depSumAmount">$0</span></div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--text-secondary)">Method:</span><span style="font-weight:700" id="depSumMethod">-</span></div><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="color:var(--text-secondary)">Fee:</span><span style="font-weight:700;color:var(--danger)" id="depSumFee">$0</span></div><div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:8px;margin-top:8px"><span style="color:var(--text-secondary)">Total:</span><span style="font-weight:700;color:var(--success)" id="depSumTotal">$0</span></div></div><button class="btn-gold" id="depSubmitBtn" onclick="submitDeposit()" disabled style="opacity:0.5"><i class="fas fa-paper-plane" style="margin-right:8px"></i>Submit Deposit Request</button></div>`;
+  } else if(walletTab === 'withdraw'){
+    depositContent = `<div class="panel"><div class="panel-header"><h3 class="panel-title"><i class="fas fa-arrow-up" style="color:var(--danger);margin-right:10px"></i>Withdraw Funds</h3></div><div class="form-group"><label>Amount (USD)</label><input type="number" placeholder="Enter amount" id="wdAmount" min="50" step="1"></div><div class="form-group"><label>Withdrawal Method</label><select id="wdMethod"><option value="bank">Bank Transfer</option><option value="crypto">Cryptocurrency</option><option value="paypal">PayPal</option></select></div><div class="form-group"><label>Destination Address</label><input type="text" id="wdAddress" placeholder="Enter wallet address or account number"></div><button class="btn-gold" onclick="submitWithdrawal()"><i class="fas fa-paper-plane" style="margin-right:8px"></i>Request Withdrawal</button></div>`;
+  } else {
+    depositContent = `<div class="panel"><div class="panel-header"><h3 class="panel-title"><i class="fab fa-bitcoin" style="color:var(--gold);margin-right:10px"></i>Crypto Deposit</h3></div><div class="crypto-options">${cryptoOptions.map(c=>`<button class="crypto-option ${selectedCrypto===c.symbol?'active':''}" onclick="selectedCrypto='${c.symbol}';render();"><i class="fab fa-${c.symbol.toLowerCase()==='btc'?'bitcoin':c.symbol.toLowerCase()==='eth'?'ethereum':'coins'}"></i> ${c.name}</button>`).join('')}</div><div class="qr-section"><div class="qr-placeholder"><i class="fas fa-qrcode" style="font-size:3rem;color:#0a0a0f"></i></div><p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px">Send ${selectedCrypto} to this address</p><div class="referral-link-box"><input type="text" value="${cryptoOptions.find(c=>c.symbol===selectedCrypto).address}" readonly><button class="btn-gold" onclick="copyAddress('${cryptoOptions.find(c=>c.symbol===selectedCrypto).address}')"><i class="fas fa-copy"></i></button></div></div></div>`;
+  }
+  
+  return `<div class="page"><div class="page-header"><h1>Multi-Currency Wallet</h1><p>Manage your balances across fiat and crypto currencies.</p></div><div class="wallet-tabs"><button class="wallet-tab ${walletTab==='overview'?'active':''}" onclick="walletTab='overview';render();"><i class="fas fa-wallet" style="margin-right:6px"></i>Overview</button><button class="wallet-tab ${walletTab==='deposit'?'active':''}" onclick="walletTab='deposit';render();"><i class="fas fa-arrow-down" style="margin-right:6px"></i>Deposit</button><button class="wallet-tab ${walletTab==='withdraw'?'active':''}" onclick="walletTab='withdraw';render();"><i class="fas fa-arrow-up" style="margin-right:6px"></i>Withdraw</button><button class="wallet-tab ${walletTab==='crypto'?'active':''}" onclick="walletTab='crypto';render();"><i class="fab fa-bitcoin" style="margin-right:6px"></i>Crypto</button></div>${depositContent}</div>`;
 }
+
 
 function renderReferrals(){
   const refData={code:'UV-INVESTOR-2026',link:'https://unionvest.capital/ref/UV-INVESTOR-2026',total:24,active:18,earned:3120,month:480,tier:'Gold',next:'Platinum',nextAt:5000,progress:62};
@@ -302,12 +436,26 @@ function renderReferrals(){
 }
 
 function renderAdmin(){
-  const users=[{id:1,name:'John Investor',email:'john@example.com',balance:25400,status:'active',joined:'2026-01-15'},{id:2,name:'Sarah Miller',email:'sarah@example.com',balance:18200,status:'active',joined:'2026-02-20'},{id:3,name:'Michael Chen',email:'michael@example.com',balance:5600,status:'pending',joined:'2026-06-18'}];
-  const adminStats=[{label:'Total Users',value:'1,247',icon:'fa-users'},{label:'Total Deposits',value:'$2.4M',icon:'fa-arrow-down'},{label:'Total Withdrawals',value:'$1.1M',icon:'fa-arrow-up'},{label:'Platform Revenue',value:'$89K',icon:'fa-coins'}];
-  return `<div class="page"><div class="page-header"><h1><i class="fas fa-shield-alt" style="color:var(--gold);margin-right:12px"></i>Admin Panel</h1><p>Manage users, transactions, and platform settings.</p></div><div class="stats-grid" style="margin-bottom:20px">${adminStats.map(s=>`<div class="stat-card"><div class="stat-header"><span class="stat-label">${s.label}</span><div class="stat-icon"><i class="fas ${s.icon}"></i></div></div><div class="stat-value">${s.value}</div></div>`).join('')}</div><div class="admin-grid"><div class="admin-sidebar">${[{id:'overview',icon:'fa-chart-pie',label:'Overview'},{id:'users',icon:'fa-users',label:'Users'},{id:'deposits',icon:'fa-arrow-down',label:'Deposits'},{id:'withdrawals',icon:'fa-arrow-up',label:'Withdrawals'},{id:'settings',icon:'fa-cog',label:'Settings'}].map(item=>`<div class="admin-sidebar-item ${adminTab===item.id?'active':''}" onclick="adminTab='${item.id}';render();"><i class="fas ${item.icon}" style="width:20px"></i>${item.label}</div>`).join('')}</div><div class="panel">${adminTab==='overview'?`<h3 style="margin-bottom:16px">Platform Overview</h3><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px"><div style="padding:16px;background:var(--bg-elevated);border-radius:12px"><div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px">Active Investments</div><div style="font-size:1.4rem;font-weight:700;color:var(--gold)">847</div></div><div style="padding:16px;background:var(--bg-elevated);border-radius:12px"><div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px">Pending KYC</div><div style="font-size:1.4rem;font-weight:700;color:var(--warning)">23</div></div><div style="padding:16px;background:var(--bg-elevated);border-radius:12px"><div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px">Support Tickets</div><div style="font-size:1.4rem;font-weight:700;color:var(--info)">12</div></div><div style="padding:16px;background:var(--bg-elevated);border-radius:12px"><div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:6px">Avg. Deposit</div><div style="font-size:1.4rem;font-weight:700;color:var(--success)">$1,920</div></div></div><div class="panel" style="padding:16px"><h4 style="margin-bottom:16px">Recent Activity</h4><div class="tx-list">${[{icon:'fa-user-plus',color:'var(--info)',title:'New user registered',desc:'Lisa Anderson joined',time:'2 min ago'},{icon:'fa-arrow-down',color:'var(--success)',title:'Deposit received',desc:'Sarah Miller — $1,000',time:'15 min ago'},{icon:'fa-chart-pie',color:'var(--gold)',title:'New investment',desc:'John Investor — Premium Plan',time:'1 hour ago'},{icon:'fa-arrow-up',color:'var(--danger)',title:'Withdrawal requested',desc:'Emma Roberts — $5,000',time:'2 hours ago'},{icon:'fa-users',color:'var(--warning)',title:'Referral bonus paid',desc:'David Wilson earned $150',time:'3 hours ago'}].map((item,i)=>`<div class="tx-item"><div class="tx-left"><div class="tx-icon" style="background:${item.color}20;color:${item.color}"><i class="fas ${item.icon}"></i></div><div class="tx-info"><h4>${item.title}</h4><p>${item.desc}</p></div></div><div class="tx-amount"><div class="date">${item.time}</div></div></div>`).join('')}</div></div>`:adminTab==='users'?`<h3 style="margin-bottom:16px">User Management</h3><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Balance</th><th>Status</th><th>Joined</th></tr></thead><tbody>${users.map(u=>`<tr><td>#${u.id}</td><td style="font-weight:600">${u.name}</td><td>${u.email}</td><td>$${u.balance.toLocaleString()}</td><td><span class="status-badge ${u.status}">${u.status}</span></td><td>${u.joined}</td></tr>`).join('')}</tbody></table></div>`:adminTab==='deposits'?`<h3 style="margin-bottom:16px">Deposit Requests</h3><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>ID</th><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr></thead><tbody>${[{id:1,user:'John Investor',amount:2500,method:'BTC',status:'completed',date:'2026-06-19'},{id:2,user:'Sarah Miller',amount:1000,method:'Bank Transfer',status:'pending',date:'2026-06-19'},{id:3,user:'Michael Chen',amount:500,method:'USDT',status:'pending',date:'2026-06-18'}].map(d=>`<tr><td>#${d.id}</td><td style="font-weight:600">${d.user}</td><td>$${d.amount.toLocaleString()}</td><td>${d.method}</td><td><span class="status-badge ${d.status==='completed'?'active':'pending'}">${d.status}</span></td><td>${d.date}</td></tr>`).join('')}</tbody></table></div>`:adminTab==='withdrawals'?`<h3 style="margin-bottom:16px">Withdrawal Requests</h3><div style="overflow-x:auto"><table class="data-table"><thead><tr><th>ID</th><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr></thead><tbody>${[{id:1,user:'John Investor',amount:800,method:'Bank',status:'completed',date:'2026-06-17'},{id:2,user:'Emma Roberts',amount:5000,method:'BTC',status:'pending',date:'2026-06-19'}].map(w=>`<tr><td>#${w.id}</td><td style="font-weight:600">${w.user}</td><td>$${w.amount.toLocaleString()}</td><td>${w.method}</td><td><span class="status-badge ${w.status==='completed'?'active':'pending'}">${w.status}</span></td><td>${w.date}</td></tr>`).join('')}</tbody></table></div>`:`<h3 style="margin-bottom:16px">Platform Settings</h3><div style="display:grid;gap:16px"><div class="form-group"><label>Platform Name</label><input type="text" value="UnionVest Capital"></div><div class="form-group"><label>Maintenance Mode</label><select><option>Off</option><option>On</option></select></div><div class="form-group"><label>Minimum Deposit (USD)</label><input type="number" value="100"></div><div class="form-group"><label>Withdrawal Fee (%)</label><input type="number" value="2" step="0.1"></div><div class="form-group"><label>Referral Commission (%)</label><input type="number" value="10"></div><button class="btn-gold" style="width:200px"><i class="fas fa-save" style="margin-right:8px"></i>Save Changes</button></div>`}</div></div></div>`;
+  const adminStats=[
+    {label:'Total Users',value:usersDB.length.toString(),icon:'fa-users',color:'var(--info)'},
+    {label:'Active Users',value:usersDB.filter(u=>u.status==='active').length.toString(),icon:'fa-user-check',color:'var(--success)'},
+    {label:'Pending Deposits',value:pendingTransactions.filter(t=>t.type==='deposit'&&t.status==='pending').length.toString(),icon:'fa-clock',color:'var(--warning)'},
+    {label:'Pending Withdrawals',value:pendingTransactions.filter(t=>t.type==='withdraw'&&t.status==='pending').length.toString(),icon:'fa-hourglass-half',color:'var(--danger)'}
+  ];
+  
+  let adminContent = '';
+  
+  if(adminTab === 'users'){
+    adminContent = `<div class="panel"><div class="panel-header" style="display:flex;justify-content:space-between;align-items:center"><h3 class="panel-title"><i class="fas fa-users" style="margin-right:10px"></i>User Management</h3></div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--border);text-align:left"><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">User</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Email</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Balance</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Status</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Joined</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Actions</th></tr></thead><tbody>${usersDB.map(u=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:12px"><div style="font-weight:600">${u.name}</div><span class="badge ${u.role==='admin'?'badge-warning':'badge-success'}" style="font-size:0.65rem;margin-top:4px;display:inline-block">${u.role}</span></td><td style="padding:12px;font-size:0.85rem;color:var(--text-secondary)">${u.email}</td><td style="padding:12px;font-weight:700;color:var(--success)">$${u.balance.toLocaleString()}</td><td style="padding:12px"><span class="badge ${u.status==='active'?'badge-success':'badge-warning'}">${u.status}</span></td><td style="padding:12px;font-size:0.8rem;color:var(--text-secondary)">${u.joined}</td><td style="padding:12px"><div style="display:flex;gap:6px"><button class="btn-gold" style="padding:6px 10px;font-size:0.7rem" onclick="adminCreditUser(${u.id})"><i class="fas fa-plus-circle"></i> Credit</button><button class="btn-outline" style="padding:6px 10px;font-size:0.7rem" onclick="adminDebitUser(${u.id})"><i class="fas fa-minus-circle"></i> Debit</button></div></td></tr>`).join('')}</tbody></table></div></div>`;
+  } else if(adminTab === 'deposits'){
+    const pendingDeps = pendingTransactions.filter(t=>t.type==='deposit'&&t.status==='pending');
+    adminContent = `<div class="panel"><div class="panel-header"><h3 class="panel-title"><i class="fas fa-arrow-down" style="color:var(--success);margin-right:10px"></i>Pending Deposits</h3></div>${pendingDeps.length===0?'<div style="padding:40px;text-align:center;color:var(--text-secondary)"><i class="fas fa-check-circle" style="font-size:2rem;margin-bottom:12px;display:block"></i>No pending deposits</div>':`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--border);text-align:left"><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">User</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Amount</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Method</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Date</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Actions</th></tr></thead><tbody>${pendingDeps.map(t=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:12px"><div style="font-weight:600">${t.user}</div><div style="font-size:0.75rem;color:var(--text-secondary)">${t.email}</div></td><td style="padding:12px;font-weight:700;color:var(--success)">+$${t.amount.toLocaleString()}</td><td style="padding:12px;font-size:0.85rem">${t.method}</td><td style="padding:12px;font-size:0.8rem;color:var(--text-secondary)">${t.date}</td><td style="padding:12px"><div style="display:flex;gap:6px"><button class="btn-gold" style="padding:6px 12px;font-size:0.75rem" onclick="adminApproveTx(${t.id})"><i class="fas fa-check"></i> Approve</button><button class="btn-outline" style="padding:6px 12px;font-size:0.75rem;color:var(--danger);border-color:var(--danger)" onclick="adminRejectTx(${t.id})"><i class="fas fa-times"></i> Reject</button></div></td></tr>`).join('')}</tbody></table></div>`}</div>`;
+  } else if(adminTab === 'withdrawals'){
+    const pendingWds = pendingTransactions.filter(t=>t.type==='withdraw'&&t.status==='pending');
+    adminContent = `<div class="panel"><div class="panel-header"><h3 class="panel-title"><i class="fas fa-arrow-up" style="color:var(--danger);margin-right:10px"></i>Pending Withdrawals</h3></div>${pendingWds.length===0?'<div style="padding:40px;text-align:center;color:var(--text-secondary)"><i class="fas fa-check-circle" style="font-size:2rem;margin-bottom:12px;display:block"></i>No pending withdrawals</div>':`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse"><thead><tr style="border-bottom:1px solid var(--border);text-align:left"><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">User</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Amount</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Method</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Date</th><th style="padding:12px;font-size:0.8rem;color:var(--text-secondary);font-weight:600">Actions</th></tr></thead><tbody>${pendingWds.map(t=>`<tr style="border-bottom:1px solid var(--border)"><td style="padding:12px"><div style="font-weight:600">${t.user}</div><div style="font-size:0.75rem;color:var(--text-secondary)">${t.email}</div></td><td style="padding:12px;font-weight:700;color:var(--danger)">-$${t.amount.toLocaleString()}</td><td style="padding:12px;font-size:0.85rem">${t.method}</td><td style="padding:12px;font-size:0.8rem;color:var(--text-secondary)">${t.date}</td><td style="padding:12px"><div style="display:flex;gap:6px"><button class="btn-gold" style="padding:6px 12px;font-size:0.75rem" onclick="adminApproveTx(${t.id})"><i class="fas fa-check"></i> Approve</button><button class="btn-outline" style="padding:6px 12px;font-size:0.75rem;color:var(--danger);border-color:var(--danger)" onclick="adminRejectTx(${t.id})"><i class="fas fa-times"></i> Reject</button></div></td></tr>`).join('')}</tbody></table></div>`}</div>`;
+  } else {
+    adminContent = `<div class="panel"><div class="panel-header"><h3 class="panel-title"><i class="fas fa-cog" style="margin-right:10px"></i>Platform Settings</h3></div><div class="form-group"><label>Platform Name</label><input type="text" value="UnionVest Capital" id="settingName"></div><div class="form-group"><label>Minimum Deposit ($)</label><input type="number" value="10" id="settingMinDeposit"></div><div class="form-group"><label>Minimum Withdrawal ($)</label><input type="number" value="50" id="settingMinWithdraw"></div><div class="form-group"><label>Referral Commission (%)</label><input type="number" value="10" id="settingReferral"></div><div class="form-group"><label>Card Processing Fee (%)</label><input type="number" value="2.5" id="settingCardFee"></div><div class="form-group"><label>PayPal Processing Fee (%)</label><input type="number" value="3.0" id="settingPaypalFee"></div><button class="btn-gold" onclick="addToast('Settings saved successfully','success')"><i class="fas fa-save" style="margin-right:8px"></i>Save Settings</button></div>`;
+  }
+  
+  return `<div class="page"><div class="page-header"><h1>Admin Dashboard</h1><p>Manage users, approve transactions, and configure platform settings.</p></div><div class="stats-grid">${adminStats.map(s=>`<div class="stat-card"><div class="stat-icon" style="background:${s.color}20;color:${s.color}"><i class="fas ${s.icon}"></i></div><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`).join('')}</div><div class="wallet-tabs" style="margin-top:20px"><button class="wallet-tab ${adminTab==='users'?'active':''}" onclick="adminTab='users';render();"><i class="fas fa-users" style="margin-right:6px"></i>Users</button><button class="wallet-tab ${adminTab==='deposits'?'active':''}" onclick="adminTab='deposits';render();"><i class="fas fa-arrow-down" style="margin-right:6px"></i>Deposits</button><button class="wallet-tab ${adminTab==='withdrawals'?'active':''}" onclick="adminTab='withdrawals';render();"><i class="fas fa-arrow-up" style="margin-right:6px"></i>Withdrawals</button><button class="wallet-tab ${adminTab==='settings'?'active':''}" onclick="adminTab='settings';render();"><i class="fas fa-cog" style="margin-right:6px"></i>Settings</button></div>${adminContent}</div>`;
 }
-
-render();
-</script>
-</body>
-</html>

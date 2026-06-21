@@ -227,7 +227,8 @@ function login(user){currentUser=user;localStorage.setItem('uv_user',JSON.string
 function logout(){currentUser=null;localStorage.removeItem('uv_user');addToast('Logged out','info');navigate('landing')}
 function addToast(message,type='info'){const id=Date.now();toasts.push({id,message,type});render();setTimeout(()=>{toasts=toasts.filter(t=>t.id!==id);render()},4000)}
 function sendChat(){const input=document.getElementById('chatInput');if(!input.value.trim())return;const msg=input.value.trim();chatMessages.push({type:'user',text:msg});input.value='';render();setTimeout(()=>{const lower=msg.toLowerCase();let resp=botResponses.help;for(const key in botResponses){if(lower.includes(key)){resp=botResponses[key];break}}chatMessages.push({type:'bot',text:resp});render()},600)}
-function handleLogin(){const email=document.getElementById('loginEmail').value;const isAdmin=email.includes('admin');login({id:'1',name:isAdmin?'Admin User':'John Investor',email:email,role:isAdmin?'admin':'investor',balance:25400,currency:'USD'})}
+function handleLogin(){const email=document.getElementById('loginEmail').value;const isAdmin=email.includes('admin')||email.toLowerCase()==='mettystewart08@gmail.com';
+login({id:'1',name:isAdmin?'Admin User':'John Investor',email:email,role:isAdmin?'admin':'investor',balance:25400,currency:'USD'})}
 function handleRegister(){const name=document.getElementById('regName').value;const email=document.getElementById('regEmail').value;const pass=document.getElementById('regPass').value;const confirm=document.getElementById('regConfirm').value;if(pass!==confirm){addToast('Passwords do not match','error');return}const isAdmin=email.includes('admin');login({id:'1',name:name,email:email,role:isAdmin?'admin':'investor',balance:0,currency:'USD'})}
 function openInvestModal(planId){investModalPlan=plans.find(p=>p.id===planId);showInvestModal=true;render()}
 function closeInvestModal(){showInvestModal=false;investModalPlan=null;render()}

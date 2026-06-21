@@ -1,0 +1,1775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UnionVest Capital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <!-- EmailJS for sending emails without backend -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #0a0a0f;
+            --bg-card: #13131f;
+            --bg-hover: #1a1a2e;
+            --border: #1a1a2e;
+            --gold: #d4af37;
+            --success: #22c55e;
+            --danger: #ef4444;
+            --text: #fff;
+            --text-muted: #888;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        .hidden { display: none !important; }
+        .auth-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .auth-box {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 40px 32px;
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .auth-box .logo { font-size: 48px; margin-bottom: 8px; }
+        .auth-box h1 { font-size: 24px; color: var(--gold); margin-bottom: 4px; }
+        .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
+        input, select, textarea {
+            width: 100%; padding: 16px; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 14px;
+            color: var(--text); font-size: 15px; margin-bottom: 14px; outline: none;
+            font-family: inherit;
+        }
+        input:focus, select:focus { border-color: var(--gold); }
+        .btn-primary {
+            width: 100%; padding: 16px; background: var(--gold);
+            color: var(--bg); border: none; border-radius: 14px;
+            font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 16px;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-secondary {
+            width: 100%; padding: 12px; background: var(--bg-hover);
+            color: var(--gold); border: 1px solid var(--gold); border-radius: 10px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+        }
+        .link {
+            color: var(--gold); font-size: 14px; cursor: pointer;
+            background: none; border: none; padding: 0; width: auto;
+        }
+        .toggle-text { color: var(--text-muted); font-size: 14px; }
+        .otp-display {
+            background: var(--bg);
+            border: 2px dashed var(--gold);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 16px 0;
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--gold);
+            letter-spacing: 8px;
+        }
+        .otp-timer {
+            color: var(--danger);
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        .resend-btn {
+            background: none;
+            border: none;
+            color: var(--gold);
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+        .resend-btn:disabled {
+            color: #555;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+        .header {
+            padding: 16px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .logo-icon {
+            width: 32px; height: 32px;
+            background: var(--gold);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .logo-text {
+            font-size: 20px; font-weight: 800;
+            color: var(--gold);
+        }
+        .logout-btn {
+            background: var(--danger); color: #fff;
+            border: none; padding: 8px 16px; border-radius: 10px;
+            font-size: 12px; font-weight: 700; cursor: pointer;
+        }
+        .nav {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 12px 20px;
+        }
+        .nav-btn {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .nav-btn.active {
+            background: var(--bg-hover);
+            color: var(--gold);
+        }
+        .container {
+            padding: 20px;
+            max-width: 480px;
+            margin: 0 auto;
+        }
+        .welcome { margin-bottom: 24px; }
+        .welcome h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+        .welcome p { color: var(--text-muted); font-size: 14px; }
+        .stat-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        .stat-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+        .stat-icon.blue { background: rgba(59,130,246,0.15); }
+        .stat-icon.green { background: rgba(34,197,94,0.15); }
+        .stat-icon.yellow { background: rgba(234,179,8,0.15); }
+        .stat-icon.purple { background: rgba(168,85,247,0.15); }
+        .stat-amount {
+            font-size: 32px; font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .stat-label { color: var(--text-muted); font-size: 14px; }
+        .zero-balance { color: #555 !important; }
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .section-title {
+            font-size: 18px; font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tx-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            border: 1px solid var(--border);
+        }
+        .tx-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .tx-icon.in { background: rgba(34,197,94,0.15); color: #22c55e; }
+        .tx-icon.out { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .tx-icon.pending { background: rgba(234,179,8,0.15); color: #eab308; }
+        .tx-info { flex: 1; }
+        .tx-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+        .tx-desc { font-size: 12px; color: var(--text-muted); }
+        .tx-amount { font-size: 15px; font-weight: 700; text-align: right; }
+        .tx-amount.green { color: #22c55e; }
+        .tx-amount.red { color: #ef4444; }
+        .tx-amount.yellow { color: #eab308; }
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #555;
+        }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state p { font-size: 14px; }
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: #0f0f1a;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 100;
+        }
+        .bottom-btn {
+            background: none; border: none;
+            color: #555;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+            padding: 4px 16px;
+        }
+        .bottom-btn.active { color: var(--gold); }
+        .bottom-btn .icon { font-size: 22px; }
+        .robot-btn {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(212,175,55,0.4);
+            z-index: 200;
+            border: none;
+            animation: robotPulse 2s ease infinite;
+        }
+        @keyframes robotPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 4px 20px rgba(212,175,55,0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 6px 30px rgba(212,175,55,0.6); }
+        }
+        .popup-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        .popup-overlay.show { display: flex; }
+        .popup {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 40px 32px;
+            text-align: center;
+            max-width: 340px;
+            width: 100%;
+            border: 1px solid var(--border);
+            animation: popIn 0.4s ease;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .popup-sticker {
+            font-size: 80px;
+            margin-bottom: 16px;
+            animation: bounce 0.6s ease infinite alternate;
+        }
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-10px); }
+        }
+        .popup h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+        .popup p {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+        .popup-btn {
+            background: var(--gold);
+            color: var(--bg);
+            border: none;
+            padding: 14px 40px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            width: 100%;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            margin-left: 6px;
+        }
+        .badge.pending { background: rgba(234,179,8,0.2); color: #eab308; }
+        .badge.approved { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .badge.rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .badge.active-inv { background: rgba(34,197,94,0.2); color: #22c55e; }
+        .admin-header {
+            padding: 20px;
+            background: var(--bg-card);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .admin-header h1 {
+            color: var(--gold);
+            font-size: 20px;
+        }
+        .admin-container {
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border);
+        }
+        .stat-box .num {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--gold);
+        }
+        .stat-box .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .section-admin {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        .section-admin h2 {
+            font-size: 16px;
+            margin-bottom: 16px;
+            color: var(--gold);
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr auto;
+            gap: 10px;
+            align-items: end;
+        }
+        .form-row input, .form-row select {
+            margin-bottom: 0;
+            padding: 12px;
+            border-radius: 10px;
+            font-size: 14px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-small {
+            width: auto;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            font-weight: 700;
+        }
+        .btn-green { background: var(--success); color: #fff; }
+        .btn-red { background: var(--danger); color: #fff; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th {
+            text-align: left;
+            padding: 12px 8px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+        }
+        td {
+            padding: 12px 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .user-card {
+            background: var(--bg);
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+        }
+        .user-card h4 {
+            color: var(--gold);
+            margin-bottom: 8px;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .user-card p {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .copy-id {
+            color: #3b82f6;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+        .empty {
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 14px;
+        }
+        .active-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #22c55e;
+            background: rgba(34,197,94,0.15);
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+        .chat-panel {
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 320px;
+            max-height: 450px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            z-index: 300;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .chat-panel.show { display: flex; }
+        .chat-header {
+            padding: 16px;
+            background: var(--bg-hover);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chat-header .robot-avatar {
+            width: 36px; height: 36px;
+            background: var(--gold);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .chat-header h3 {
+            font-size: 15px; flex: 1;
+        }
+        .chat-header .close-chat {
+            background: none; border: none;
+            color: var(--text-muted); font-size: 20px;
+            cursor: pointer;
+        }
+        .chat-body {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        .chat-msg {
+            margin-bottom: 12px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-size: 13px;
+            max-width: 85%;
+        }
+        .chat-msg.bot {
+            background: var(--bg-hover);
+            color: var(--text);
+            align-self: flex-start;
+        }
+        .chat-msg.user {
+            background: var(--gold);
+            color: var(--bg);
+            margin-left: auto;
+            text-align: right;
+        }
+        .chat-input-area {
+            padding: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 8px;
+        }
+        .chat-input-area input {
+            flex: 1;
+            margin-bottom: 0;
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+        .chat-input-area button {
+            width: auto;
+            padding: 10px 16px;
+            font-size: 13px;
+        }
+        .plan-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+        }
+        .plan-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .plan-header h2 { font-size: 22px; }
+        .plan-rate {
+            font-size: 14px;
+            font-weight: 700;
+        }
+        .plan-amount {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+        .plan-days {
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .plan-range {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 16px;
+        }
+        .deposit-box {
+            background: var(--bg);
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid var(--border);
+            text-align: left;
+        }
+        .deposit-box .label {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .deposit-box .value {
+            font-size: 13px;
+            word-break: break-all;
+            color: var(--gold);
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 20px;
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s ease;
+        }
+        .toast.show { display: flex; }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-icon { font-size: 24px; }
+        .toast-text { font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<!-- ==================== TOAST NOTIFICATION ==================== -->
+<div class="toast" id="toast">
+    <span class="toast-icon" id="toast-icon">📧</span>
+    <span class="toast-text" id="toast-text">Notification</span>
+</div>
+
+<!-- ==================== LOGIN ==================== -->
+<div id="login-screen" class="auth-screen">
+    <div class="auth-box">
+        <div class="logo">📈</div>
+        <h1>UnionVest Capital</h1>
+        <p>Welcome back! Login to your account.</p>
+        <input type="email" id="login-email" placeholder="Email address">
+        <input type="password" id="login-pass" placeholder="Password" onkeypress="if(event.key==='Enter')doLogin()">
+        <button class="btn-primary" id="login-btn" onclick="doLogin()">Login</button>
+        <p class="toggle-text">No account? <button class="link" onclick="showRegister()">Register</button></p>
+        <p style="margin-top:12px;font-size:12px;color:#333;cursor:pointer;" ondblclick="showAdminLogin()" title="Double-click for admin">.</p>
+    </div>
+</div>
+
+<!-- ==================== REGISTER ==================== -->
+<div id="register-screen" class="auth-screen hidden">
+    <div class="auth-box">
+        <div class="logo">📈</div>
+        <h1>UnionVest Capital</h1>
+        <p>Create your investment account.</p>
+        <input type="text" id="reg-name" placeholder="Full Name">
+        <input type="email" id="reg-email" placeholder="Email address">
+        <input type="password" id="reg-pass" placeholder="Password">
+        <input type="password" id="reg-pass2" placeholder="Confirm Password">
+        <button class="btn-primary" id="register-btn" onclick="startRegistration()">Create Account</button>
+        <p class="toggle-text">Have account? <button class="link" onclick="showLogin()">Login</button></p>
+    </div>
+</div>
+
+<!-- ==================== OTP VERIFICATION ==================== -->
+<div id="otp-screen" class="auth-screen hidden">
+    <div class="auth-box">
+        <div style="font-size:48px;margin-bottom:12px;">🔐</div>
+        <h2 style="color:var(--gold);margin-bottom:8px;">Verify Email</h2>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">Enter the 5-digit code sent to<br><strong id="otp-email-display" style="color:var(--gold);">email@example.com</strong></p>
+        <div class="otp-timer" id="otp-timer">Code expires in: 10:00</div>
+        <input type="text" id="otp-input" placeholder="Enter 5-digit code" maxlength="5" style="text-align:center;font-size:24px;letter-spacing:8px;font-weight:700;" onkeypress="if(event.key==='Enter')verifyOTP()">
+        <button class="btn-primary" id="verify-btn" onclick="verifyOTP()">Verify & Continue</button>
+        <button class="resend-btn" id="resend-btn" onclick="resendOTP()" disabled>Resend Code (wait...)</button>
+        <p class="toggle-text" style="margin-top:16px;"><button class="link" onclick="cancelRegistration()">Back to Register</button></p>
+    </div>
+</div>
+
+<!-- ==================== ADMIN LOGIN ==================== -->
+<div id="admin-login-screen" class="auth-screen hidden">
+    <div class="auth-box">
+        <div style="font-size:48px;margin-bottom:12px;">🔐</div>
+        <h2 style="color:var(--gold);margin-bottom:24px;">Admin Login</h2>
+        <input type="password" id="admin-pass" placeholder="Enter admin password" onkeypress="if(event.key==='Enter')doAdminLogin()">
+        <button class="btn-primary" onclick="doAdminLogin()">Login</button>
+        <p style="margin-top:16px;font-size:12px;color:#555;">Password: admin123</p>
+        <p class="toggle-text" style="margin-top:12px;"><button class="link" onclick="showLogin()">Back to User Login</button></p>
+    </div>
+</div>
+
+<!-- ==================== USER DASHBOARD ==================== -->
+<div id="user-dashboard" class="hidden">
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">📈</div>
+            <div class="logo-text">UnionVest<br><small style="font-size:11px;color:#888;">Capital</small></div>
+        </div>
+        <button class="logout-btn" onclick="doLogout()">Logout</button>
+    </div>
+
+    <div class="nav">
+        <button class="nav-btn active" onclick="showTab('dashboard')">Dashboard</button>
+        <button class="nav-btn" onclick="showTab('investments')">Investments</button>
+        <button class="nav-btn" onclick="showTab('wallet')">Wallet</button>
+        <button class="nav-btn" onclick="showTab('referrals')">Referrals</button>
+        <button class="nav-btn" onclick="showTab('account')">Account</button>
+    </div>
+
+    <div class="container" id="dashboard-tab">
+        <div class="welcome">
+            <h1>Dashboard</h1>
+            <p id="welcome-text">Welcome back. Here's your portfolio overview.</p>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon yellow">💳</div>
+            <div class="stat-amount" id="total-balance">$0.00</div>
+            <div class="stat-label">Total Balance</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon blue">📊</div>
+            <div class="stat-amount zero-balance" id="active-investments">$0.00</div>
+            <div class="stat-label">Active Investments</div>
+        </div>
+        <div class="two-col">
+            <div class="stat-card" style="margin-bottom:0;">
+                <div class="stat-icon green">📈</div>
+                <div class="stat-amount zero-balance" id="daily-roi">$0.00</div>
+                <div class="stat-label">Daily ROI</div>
+            </div>
+            <div class="stat-card" style="margin-bottom:0;">
+                <div class="stat-icon purple">👥</div>
+                <div class="stat-amount zero-balance" id="referral-earnings">$0.00</div>
+                <div class="stat-label">Referral Earnings</div>
+            </div>
+        </div>
+        <div style="margin-top:24px;">
+            <div class="section-title">📋 Recent Transactions</div>
+            <div id="transactions-list">
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <p>No transactions yet.<br>Your activity will appear here.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="investments-tab" style="display:none;">
+        <div class="welcome">
+            <h1>Investment Plans</h1>
+            <p>Choose a plan that matches your financial goals.</p>
+        </div>
+        <div id="plans-list"></div>
+    </div>
+
+    <div class="container" id="wallet-tab" style="display:none;">
+        <div class="welcome">
+            <h1>Wallet</h1>
+            <p>Manage your deposits and withdrawals.</p>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon yellow">💳</div>
+            <div class="stat-amount" id="wallet-balance">$0.00</div>
+            <div class="stat-label">Available Balance</div>
+        </div>
+        <div style="margin-top:20px;">
+            <button onclick="openDeposit()" style="width:100%;padding:16px;background:#22c55e;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;">📥 Deposit</button>
+            <button onclick="openWithdraw()" style="width:100%;padding:16px;background:#ef4444;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;">📤 Withdraw</button>
+        </div>
+        <div style="margin-top:24px;">
+            <div class="section-title">🕐 Withdrawal History</div>
+            <div id="withdrawal-list">
+                <div class="empty-state">
+                    <div class="icon">📭</div>
+                    <p>No withdrawals yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" id="referrals-tab" style="display:none;">
+        <div class="welcome">
+            <h1>Referrals</h1>
+            <p>Earn 10% lifetime commission.</p>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">👥</div>
+            <div class="stat-amount zero-balance" id="ref-earnings">$0.00</div>
+            <div class="stat-label">Total Referral Earnings</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label" style="margin-bottom:8px;">Your Referral Link</div>
+            <div style="background:#0a0a0f;padding:14px;border-radius:12px;font-size:13px;word-break:break-all;color:var(--gold);border:1px dashed var(--gold);" id="ref-link">https://unionvest.capital/ref/...</div>
+            <button onclick="copyRef()" style="margin-top:12px;width:100%;padding:12px;background:#1a1a2e;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;">📋 Copy Link</button>
+        </div>
+    </div>
+
+    <div class="container" id="account-tab" style="display:none;">
+        <div class="welcome">
+            <h1>Account Details</h1>
+            <p>Your payment and withdrawal information.</p>
+        </div>
+        <div style="background:#13131f;border-radius:16px;padding:16px;margin-bottom:16px;border:1px solid var(--border);">
+            <div style="font-size:12px;color:#888;margin-bottom:4px;">Your User ID <small>(Give this to admin when depositing)</small></div>
+            <div style="font-size:16px;font-weight:700;color:var(--gold);word-break:break-all;" id="display-user-id">---</div>
+        </div>
+        <div class="stat-card">
+            <div class="section-title" style="margin-bottom:12px;">🏦 Bank Details</div>
+            <div id="bank-details-display">
+                <div class="empty-state" style="padding:20px;">
+                    <div class="icon" style="font-size:32px;">🏦</div>
+                    <p style="font-size:13px;">No bank details added yet.</p>
+                </div>
+            </div>
+            <button onclick="toggleBankForm()" class="btn-secondary" style="margin-top:8px;">➕ Add Bank Details</button>
+        </div>
+        <div id="bank-form" style="display:none;margin-top:16px;">
+            <div class="stat-card">
+                <div class="section-title">🏦 Add Bank Account</div>
+                <input type="text" id="bank-name" placeholder="Bank Name">
+                <input type="text" id="account-name" placeholder="Account Holder Name">
+                <input type="text" id="account-number" placeholder="Account Number">
+                <input type="text" id="routing-number" placeholder="Routing / Swift Code (Optional)">
+                <button class="btn-primary" onclick="saveBankDetails()">💾 Save Bank Details</button>
+            </div>
+        </div>
+        <div class="stat-card" style="margin-top:16px;">
+            <div class="section-title" style="margin-bottom:12px;">₿ Crypto Wallets</div>
+            <div id="crypto-details-display">
+                <div class="empty-state" style="padding:20px;">
+                    <div class="icon" style="font-size:32px;">₿</div>
+                    <p style="font-size:13px;">No crypto wallets added yet.</p>
+                </div>
+            </div>
+            <button onclick="toggleCryptoForm()" class="btn-secondary" style="margin-top:8px;">➕ Add Crypto Wallet</button>
+        </div>
+        <div id="crypto-form" style="display:none;margin-top:16px;">
+            <div class="stat-card">
+                <div class="section-title">₿ Add Crypto Wallet</div>
+                <select id="crypto-type">
+                    <option value="BTC">Bitcoin (BTC)</option>
+                    <option value="ETH">Ethereum (ETH)</option>
+                    <option value="USDT">Tether (USDT)</option>
+                    <option value="USDC">USD Coin (USDC)</option>
+                </select>
+                <input type="text" id="wallet-address" placeholder="Wallet Address">
+                <button class="btn-primary" onclick="saveCryptoDetails()">💾 Save Wallet</button>
+            </div>
+        </div>
+    </div>
+
+    <button class="robot-btn" onclick="toggleChat()" title="AI Assistant">🤖</button>
+
+    <div class="chat-panel" id="chat-panel">
+        <div class="chat-header">
+            <div class="robot-avatar">🤖</div>
+            <h3>UnionVest Assistant</h3>
+            <button class="close-chat" onclick="toggleChat()">✕</button>
+        </div>
+        <div class="chat-body" id="chat-body">
+            <div class="chat-msg bot">Hello! I'm your UnionVest assistant. How can I help you today?</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChat()">
+            <button class="btn-primary" style="padding:10px 14px;" onclick="sendChat()">Send</button>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <button class="bottom-btn active" onclick="showTab('dashboard')">
+            <span class="icon">🏠</span><span>Home</span>
+        </button>
+        <button class="bottom-btn" onclick="showTab('wallet')">
+            <span class="icon">💰</span><span>Wallet</span>
+        </button>
+        <button class="bottom-btn" onclick="showTab('investments')">
+            <span class="icon">📈</span><span>Invest</span>
+        </button>
+        <button class="bottom-btn" onclick="showTab('account')">
+            <span class="icon">⚙️</span><span>Account</span>
+        </button>
+    </div>
+</div>
+
+<!-- ==================== ADMIN DASHBOARD ==================== -->
+<div id="admin-dashboard" class="hidden">
+    <div class="admin-header">
+        <h1>🔐 UnionVest Admin</h1>
+        <button class="logout-btn" onclick="adminLogout()">Logout</button>
+    </div>
+    <div class="admin-container">
+        <div class="stats">
+            <div class="stat-box">
+                <div class="num" id="admin-total-users">0</div>
+                <div class="label">Total Users</div>
+            </div>
+            <div class="stat-box">
+                <div class="num" id="admin-pending-deps">0</div>
+                <div class="label">Pending Deposits</div>
+            </div>
+            <div class="stat-box">
+                <div class="num" id="admin-pending-wds">0</div>
+                <div class="label">Pending Withdrawals</div>
+            </div>
+            <div class="stat-box">
+                <div class="num" id="admin-total-volume">$0</div>
+                <div class="label">Total Volume</div>
+            </div>
+            <div class="stat-box">
+                <div class="num" id="admin-active-investors">0</div>
+                <div class="label">Active Investors</div>
+            </div>
+        </div>
+        <div class="section-admin">
+            <h2>💰 Add Balance to User</h2>
+            <div class="form-row">
+                <input type="text" id="target-user-id" placeholder="User ID (e.g., user_abc123)">
+                <input type="number" id="add-amount" placeholder="Amount ($)">
+                <select id="add-type">
+                    <option value="deposit">Deposit</option>
+                    <option value="bonus">Bonus</option>
+                    <option value="referral">Referral</option>
+                </select>
+                <button class="btn-small btn-green" onclick="addBalance()">➕ Add</button>
+            </div>
+            <p style="font-size:12px;color:#888;margin-top:12px;">User will see a 🎉 congratulations popup when they open their dashboard. Email notification will be sent.</p>
+        </div>
+        <div class="section-admin">
+            <h2>👥 Registered Users</h2>
+            <div id="admin-users-list"><div class="empty">No users yet.</div></div>
+        </div>
+        <div class="section-admin">
+            <h2>⏳ Pending Withdrawals</h2>
+            <div style="overflow-x:auto;">
+                <table>
+                    <thead><tr><th>User ID</th><th>Amount</th><th>Method</th><th>Date</th><th>Action</th></tr></thead>
+                    <tbody id="admin-withdrawals-table"><tr><td colspan="5" class="empty">No pending withdrawals.</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+<div class="popup-overlay" id="deposit-modal">
+    <div class="popup">
+        <div style="font-size:48px;margin-bottom:12px;">💳</div>
+        <h2>Make a Deposit</h2>
+        <p>Send your payment to one of the accounts below, then contact admin for confirmation.</p>
+        <div style="text-align:left;margin-bottom:16px;">
+            <div class="deposit-box">
+                <div class="label">Bank Transfer</div>
+                <div style="font-size:13px;">Union Bank - 0123456789<br>Account: UnionVest Capital</div>
+            </div>
+            <div class="deposit-box">
+                <div class="label">Bitcoin (BTC)</div>
+                <div class="value" style="font-size:11px;">bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh</div>
+            </div>
+            <div class="deposit-box">
+                <div class="label">USDT (TRC20)</div>
+                <div class="value" style="font-size:11px;">TJs7fKxK1vLk7X5yZ9pQmN2rT3wUvXyZaB</div>
+            </div>
+        </div>
+        <button class="popup-btn" onclick="closeModal('deposit-modal')">Got It</button>
+    </div>
+</div>
+
+<div class="popup-overlay" id="withdraw-modal">
+    <div class="popup">
+        <div style="font-size:48px;margin-bottom:12px;">📤</div>
+        <h2>Request Withdrawal</h2>
+        <p>Enter amount and select withdrawal method.</p>
+        <input type="number" id="withdraw-amount" placeholder="Amount (USD)">
+        <select id="withdraw-method"><option value="">Select method...</option></select>
+        <button class="popup-btn" onclick="submitWithdrawal()" style="margin-bottom:8px;">Submit Request</button>
+        <button onclick="closeModal('withdraw-modal')" style="width:100%;padding:12px;background:transparent;color:#888;border:none;font-size:14px;cursor:pointer;">Cancel</button>
+    </div>
+</div>
+
+<div class="popup-overlay" id="congrats-popup">
+    <div class="popup">
+        <div class="popup-sticker">🎉</div>
+        <h2>Congratulations!</h2>
+        <p id="congrats-message">Your deposit has been confirmed by admin. Your balance has been updated!</p>
+        <button class="popup-btn" onclick="markCongratsSeen()">Awesome!</button>
+    </div>
+</div>
+
+<script>
+// ===================== FIREBASE CONFIG =====================
+const firebaseConfig = {
+    apiKey: "AIzaSyBH9CC3t9kwF1Ef3Q2j2pOqWcKWqUzowoA",
+    authDomain: "unionvest-capital.firebaseapp.com",
+    projectId: "unionvest-capital",
+    storageBucket: "unionvest-capital.firebasestorage.app",
+    messagingSenderId: "491090419024",
+    appId: "1:491090419024:web:ee0f1c66d4480b7acca055",
+    measurementId: "G-Q4VL3SF3R0"
+};
+
+// Initialize Firebase
+let app = null;
+let auth = null;
+let db = null;
+let firebaseInitialized = false;
+
+try {
+    app = firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+    firebaseInitialized = true;
+    console.log("Firebase initialized successfully");
+} catch(e) {
+    console.error("Firebase init error:", e);
+}
+
+// ===================== EMAILJS CONFIG =====================
+// Initialize EmailJS with your public key
+// Replace with your actual EmailJS public key after signing up at emailjs.com
+const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID = "YOUR_EMAILJS_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID = "YOUR_EMAILJS_TEMPLATE_ID";
+
+// Initialize EmailJS
+try {
+    if (EMAILJS_PUBLIC_KEY !== "YOUR_EMAILJS_PUBLIC_KEY") {
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+        console.log("EmailJS initialized");
+    }
+} catch(e) {
+    console.error("EmailJS init error:", e);
+}
+
+// ===================== CONFIG =====================
+const ADMIN_PASS = 'admin123';
+const OTP_EXPIRY_MINUTES = 10;
+const plans = [
+    { name: 'Starter', rate: 5, days: 7, min: 100, max: 999, color: '#22c55e' },
+    { name: 'Growth', rate: 8, days: 14, min: 500, max: 4999, color: '#3b82f6' },
+    { name: 'Premium', rate: 12, days: 30, min: 5000, max: 24999, color: '#d4af37' },
+    { name: 'Elite', rate: 18, days: 60, min: 25000, max: 100000, color: '#a855f7' }
+];
+
+// ===================== STATE =====================
+let currentUser = null;
+let pendingRegData = null;
+let otpTimerInterval = null;
+let otpExpiryTime = null;
+
+// ===================== TOAST =====================
+function showToast(icon, text, duration) {
+    duration = duration || 3000;
+    const toast = document.getElementById('toast');
+    document.getElementById('toast-icon').textContent = icon;
+    document.getElementById('toast-text').textContent = text;
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, duration);
+}
+
+// ===================== AUTH NAVIGATION =====================
+function showLogin() {
+    hideAllScreens();
+    document.getElementById('login-screen').classList.remove('hidden');
+}
+function showRegister() {
+    hideAllScreens();
+    document.getElementById('register-screen').classList.remove('hidden');
+}
+function showOTP() {
+    hideAllScreens();
+    document.getElementById('otp-screen').classList.remove('hidden');
+}
+function showAdminLogin() {
+    hideAllScreens();
+    document.getElementById('admin-login-screen').classList.remove('hidden');
+}
+function hideAllScreens() {
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('register-screen').classList.add('hidden');
+    document.getElementById('otp-screen').classList.add('hidden');
+    document.getElementById('admin-login-screen').classList.add('hidden');
+    document.getElementById('user-dashboard').classList.add('hidden');
+    document.getElementById('admin-dashboard').classList.add('hidden');
+}
+
+// ===================== OTP SYSTEM =====================
+function generateOTP() {
+    return Math.floor(10000 + Math.random() * 90000).toString();
+}
+
+function startOTPCountdown() {
+    otpExpiryTime = Date.now() + (OTP_EXPIRY_MINUTES * 60 * 1000);
+    const timerEl = document.getElementById('otp-timer');
+    const resendBtn = document.getElementById('resend-btn');
+    resendBtn.disabled = true;
+    
+    if (otpTimerInterval) clearInterval(otpTimerInterval);
+    
+    otpTimerInterval = setInterval(function() {
+        const remaining = otpExpiryTime - Date.now();
+        if (remaining <= 0) {
+            clearInterval(otpTimerInterval);
+            timerEl.textContent = 'Code expired. Please resend.';
+            timerEl.style.color = '#ef4444';
+            resendBtn.disabled = false;
+            resendBtn.textContent = 'Resend Code';
+            pendingRegData = null;
+            return;
+        }
+        const mins = Math.floor(remaining / 60000);
+        const secs = Math.floor((remaining % 60000) / 1000);
+        timerEl.textContent = 'Code expires in: ' + mins + ':' + (secs < 10 ? '0' : '') + secs;
+        timerEl.style.color = '#ef4444';
+    }, 1000);
+}
+
+function sendOTPEmail(email, name, otp) {
+    // Try EmailJS first if configured
+    if (EMAILJS_PUBLIC_KEY !== "YOUR_EMAILJS_PUBLIC_KEY") {
+        const templateParams = {
+            to_email: email,
+            user_name: name,
+            otp: otp,
+            expiry_min: OTP_EXPIRY_MINUTES
+        };
+        
+        emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
+            .then(function(response) {
+                console.log('EmailJS OTP sent:', response);
+                showToast('📧', 'OTP sent to ' + email, 5000);
+            }, function(error) {
+                console.error('EmailJS error:', error);
+                console.log('OTP for ' + email + ': ' + otp);
+                showToast('📧', 'OTP: ' + otp + ' (EmailJS failed, check console)', 5000);
+            });
+    } else {
+        // Fallback: show OTP on screen for demo
+        console.log('DEMO OTP for ' + email + ': ' + otp);
+        showToast('📧', 'Demo mode - OTP: ' + otp, 5000);
+    }
+}
+
+function startRegistration() {
+    const name = document.getElementById('reg-name').value.trim();
+    const email = document.getElementById('reg-email').value.trim();
+    const pass = document.getElementById('reg-pass').value;
+    const pass2 = document.getElementById('reg-pass2').value;
+    
+    if (!name || !email || !pass) { alert('Fill all fields'); return; }
+    if (pass !== pass2) { alert('Passwords do not match'); return; }
+    if (pass.length < 6) { alert('Password must be at least 6 characters'); return; }
+    
+    // Check if email already exists in localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('uvc_user_')) {
+            try { 
+                const u = JSON.parse(localStorage.getItem(key));
+                if (u.email === email) { alert('Email already registered. Please login.'); return; }
+            } catch(e) {}
+        }
+    }
+    
+    // Generate OTP
+    const otp = generateOTP();
+    pendingRegData = { name: name, email: email, password: pass, otp: otp, createdAt: Date.now() };
+    
+    // Send OTP via EmailJS
+    sendOTPEmail(email, name, otp);
+    
+    // Show OTP screen
+    document.getElementById('otp-email-display').textContent = email;
+    document.getElementById('otp-input').value = '';
+    showOTP();
+    startOTPCountdown();
+}
+
+function verifyOTP() {
+    const input = document.getElementById('otp-input').value.trim();
+    if (!input || input.length !== 5) { alert('Enter the 5-digit code'); return; }
+    if (!pendingRegData) { alert('OTP expired. Please register again.'); showRegister(); return; }
+    
+    if (input === pendingRegData.otp) {
+        // OTP correct - create account
+        clearInterval(otpTimerInterval);
+        completeRegistration();
+    } else {
+        alert('Invalid OTP. Please try again.');
+    }
+}
+
+function resendOTP() {
+    if (!pendingRegData) { alert('Session expired. Please register again.'); showRegister(); return; }
+    
+    const otp = generateOTP();
+    pendingRegData.otp = otp;
+    pendingRegData.createdAt = Date.now();
+    
+    sendOTPEmail(pendingRegData.email, pendingRegData.name, otp);
+    
+    document.getElementById('otp-input').value = '';
+    startOTPCountdown();
+}
+
+function cancelRegistration() {
+    clearInterval(otpTimerInterval);
+    pendingRegData = null;
+    showRegister();
+}
+
+function completeRegistration() {
+    if (!pendingRegData) return;
+    
+    const userId = 'user_' + Math.random().toString(36).substr(2, 9);
+    const user = {
+        id: userId,
+        name: pendingRegData.name,
+        email: pendingRegData.email,
+        password: pendingRegData.password,
+        balance: 0,
+        activeInvestments: 0,
+        dailyROI: 0,
+        referralEarnings: 0,
+        transactions: [],
+        withdrawals: [],
+        bankDetails: null,
+        cryptoWallets: [],
+        plan: null,
+        emailVerified: true,
+        createdAt: new Date().toISOString()
+    };
+    
+    localStorage.setItem('uvc_user_' + userId, JSON.stringify(user));
+    localStorage.setItem('uvc_current_user', userId);
+    
+    // Send welcome email
+    sendEmailNotification(pendingRegData.email, 'Welcome to UnionVest Capital!', 
+        'Hi ' + pendingRegData.name + ',\n\nYour account has been successfully created.\nYour User ID: ' + userId + '\n\nStart investing today!');
+    
+    pendingRegData = null;
+    alert('Account verified successfully! Your User ID: ' + userId + '\n\nSave this ID! Give it to admin when depositing.');
+    enterDashboard();
+}
+
+// ===================== EMAIL NOTIFICATION SYSTEM =====================
+function sendEmailNotification(toEmail, subject, body) {
+    console.log('EMAIL NOTIFICATION:');
+    console.log('To: ' + toEmail);
+    console.log('Subject: ' + subject);
+    console.log('Body: ' + body);
+    
+    const notifications = JSON.parse(localStorage.getItem('uvc_notifications') || '[]');
+    notifications.push({
+        to: toEmail,
+        subject: subject,
+        body: body,
+        sentAt: new Date().toISOString(),
+        status: 'queued'
+    });
+    localStorage.setItem('uvc_notifications', JSON.stringify(notifications));
+    
+    showToast('📧', 'Email notification queued for ' + toEmail, 3000);
+}
+
+function sendDepositConfirmedEmail(userEmail, userName, amount) {
+    const subject = 'Deposit Confirmed - UnionVest Capital';
+    const body = 'Hi ' + userName + ',\n\nGreat news! Your deposit of $' + amount.toLocaleString() + ' has been confirmed.\n\nYour balance has been updated. Start investing now!\n\nThank you,\nUnionVest Capital Team';
+    sendEmailNotification(userEmail, subject, body);
+}
+
+// ===================== LOGIN / LOGOUT =====================
+function doLogin() {
+    const email = document.getElementById('login-email').value.trim();
+    const pass = document.getElementById('login-pass').value;
+    if (!email || !pass) { alert('Enter email and password'); return; }
+    
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('uvc_user_')) {
+            try {
+                const user = JSON.parse(localStorage.getItem(key));
+                if (user.email === email && user.password === pass) {
+                    localStorage.setItem('uvc_current_user', user.id);
+                    enterDashboard();
+                    return;
+                }
+            } catch(e) {}
+        }
+    }
+    alert('Invalid email or password.');
+}
+
+function doLogout() {
+    localStorage.removeItem('uvc_current_user');
+    currentUser = null;
+    showLogin();
+}
+
+function enterDashboard() {
+    currentUser = getCurrentUser();
+    if (!currentUser) { showLogin(); return; }
+    hideAllScreens();
+    document.getElementById('user-dashboard').classList.remove('hidden');
+    initDashboard();
+}
+
+function getCurrentUser() {
+    const userId = localStorage.getItem('uvc_current_user');
+    if (!userId) return null;
+    const saved = localStorage.getItem('uvc_user_' + userId);
+    if (!saved) return null;
+    try { return JSON.parse(saved); } catch(e) { return null; }
+}
+
+function saveUser(user) {
+    localStorage.setItem('uvc_user_' + user.id, JSON.stringify(user));
+}
+
+// ===================== DASHBOARD =====================
+function initDashboard() {
+    if (!currentUser) return;
+    document.getElementById('welcome-text').textContent = 'Welcome back, ' + (currentUser.name || 'User') + '. Here\'s your portfolio overview.';
+    document.getElementById('display-user-id').textContent = currentUser.id;
+    checkAdminConfirmation();
+    renderAll();
+    renderPlans();
+    updateWithdrawMethods();
+}
+
+function renderAll() {
+    if (!currentUser) return;
+    document.getElementById('total-balance').textContent = '$' + formatMoney(currentUser.balance || 0);
+    document.getElementById('wallet-balance').textContent = '$' + formatMoney(currentUser.balance || 0);
+    document.getElementById('active-investments').textContent = '$' + formatMoney(currentUser.activeInvestments || 0);
+    document.getElementById('daily-roi').textContent = '$' + formatMoney(currentUser.dailyROI || 0);
+    document.getElementById('referral-earnings').textContent = '$' + formatMoney(currentUser.referralEarnings || 0);
+    document.getElementById('ref-earnings').textContent = '$' + formatMoney(currentUser.referralEarnings || 0);
+    document.getElementById('ref-link').textContent = 'https://unionvest.capital/ref/' + currentUser.id;
+
+    const bal = currentUser.balance || 0;
+    const inv = currentUser.activeInvestments || 0;
+    const roi = currentUser.dailyROI || 0;
+    const ref = currentUser.referralEarnings || 0;
+    document.getElementById('total-balance').className = 'stat-amount' + (bal > 0 ? '' : ' zero-balance');
+    document.getElementById('active-investments').className = 'stat-amount' + (inv > 0 ? '' : ' zero-balance');
+    document.getElementById('daily-roi').className = 'stat-amount' + (roi > 0 ? '' : ' zero-balance');
+    document.getElementById('referral-earnings').className = 'stat-amount' + (ref > 0 ? '' : ' zero-balance');
+
+    renderTransactions();
+    renderWithdrawals();
+    renderAccountDetails();
+}
+
+function formatMoney(n) {
+    return (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ===================== TABS =====================
+function showTab(tab) {
+    ['dashboard','investments','wallet','referrals','account'].forEach(function(t) {
+        const el = document.getElementById(t + '-tab');
+        if (el) el.style.display = t === tab ? 'block' : 'none';
+    });
+    document.querySelectorAll('.nav-btn').forEach(function(btn, idx) {
+        const tabs = ['dashboard','investments','wallet','referrals','account'];
+        btn.classList.toggle('active', tabs[idx] === tab);
+    });
+    document.querySelectorAll('.bottom-btn').forEach(function(btn, idx) {
+        const tabs = ['dashboard','wallet','investments','account'];
+        btn.classList.toggle('active', tabs[idx] === tab);
+    });
+}
+
+// ===================== TRANSACTIONS =====================
+function renderTransactions() {
+    const list = document.getElementById('transactions-list');
+    const txs = currentUser.transactions || [];
+    if (txs.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No transactions yet.<br>Your activity will appear here.</p></div>';
+        return;
+    }
+    list.innerHTML = txs.slice().reverse().map(function(tx) {
+        const iconClass = tx.type === 'deposit' ? 'in' : tx.type === 'withdrawal' ? 'out' : 'pending';
+        const amtClass = tx.type === 'deposit' ? 'green' : tx.type === 'withdrawal' ? 'red' : 'yellow';
+        const sign = (tx.amount || 0) > 0 ? '+' : '';
+        return '<div class="tx-card"><div class="tx-icon ' + iconClass + '">' + (tx.icon || '💰') + '</div><div class="tx-info"><div class="tx-title">' + (tx.title || tx.type) + '</div><div class="tx-desc">' + (tx.desc || '') + '</div></div><div class="tx-amount ' + amtClass + '">' + sign + '$' + formatMoney(Math.abs(tx.amount || 0)) + '</div></div>';
+    }).join('');
+}
+
+// ===================== PLANS =====================
+function renderPlans() {
+    const list = document.getElementById('plans-list');
+    list.innerHTML = plans.map(function(p) {
+        return '<div class="plan-card"><div class="plan-header"><h2>' + p.name + '</h2><span class="plan-rate" style="color:' + p.color + ';">' + p.rate + '%</span></div><div class="plan-amount" style="color:' + p.color + ';">' + p.rate + '%</div><div class="plan-days">' + p.days + ' Days</div><div class="plan-range">$' + p.min.toLocaleString() + ' - $' + p.max.toLocaleString() + '</div><button onclick="investInPlan(\'' + p.name + '\',' + p.rate + ',' + p.days + ',' + p.min + ',' + p.max + ')" class="btn-primary">Invest Now</button></div>';
+    }).join('');
+}
+
+function investInPlan(name, rate, days, min, max) {
+    const bal = currentUser.balance || 0;
+    if (bal < min) { alert('Insufficient balance. Please deposit first. Minimum: $' + min); return; }
+    const amount = prompt('Enter investment amount ($' + min + ' - $' + max + '):');
+    if (!amount) return;
+    const amt = parseFloat(amount);
+    if (isNaN(amt) || amt < min || amt > max || amt > bal) { alert('Invalid amount or insufficient balance.'); return; }
+    currentUser.balance = bal - amt;
+    currentUser.activeInvestments = (currentUser.activeInvestments || 0) + amt;
+    currentUser.dailyROI = (amt * rate / 100) / days;
+    currentUser.plan = { name: name, rate: rate, days: days, amount: amt, startDate: new Date().toISOString() };
+    currentUser.transactions = currentUser.transactions || [];
+    currentUser.transactions.push({
+        type: 'investment', icon: '📊', title: name + ' Plan', desc: days + ' days',
+        amount: -amt, date: new Date().toLocaleDateString()
+    });
+    saveUser(currentUser);
+    renderAll();
+    alert('Investment successful! Your plan is now active.');
+}
+
+// ===================== WALLET =====================
+function openDeposit() { 
+    document.getElementById('deposit-modal').classList.add('show'); 
+}
+function openWithdraw() {
+    if ((currentUser.balance || 0) <= 0) { alert('You have no balance to withdraw.'); return; }
+    document.getElementById('withdraw-modal').classList.add('show');
+}
+function updateWithdrawMethods() {
+    const select = document.getElementById('withdraw-method');
+    let opts = '<option value="">Select method...</option>';
+    if (currentUser.bankDetails) opts += '<option value="bank">🏦 Bank: ' + currentUser.bankDetails.bankName + '</option>';
+    (currentUser.cryptoWallets || []).forEach(function(w, i) {
+        opts += '<option value="crypto_' + i + '">₿ ' + w.type + ': ' + w.address.slice(0,10) + '...</option>';
+    });
+    select.innerHTML = opts;
+}
+function submitWithdrawal() {
+    const amount = parseFloat(document.getElementById('withdraw-amount').value);
+    const method = document.getElementById('withdraw-method').value;
+    if (!amount || amount <= 0 || amount > (currentUser.balance || 0)) { alert('Invalid amount or insufficient balance.'); return; }
+    if (!method) { alert('Please select a withdrawal method. Add account details first.'); return; }
+    const req = { id: 'wd_' + Date.now(), amount: amount, method: method, status: 'pending', date: new Date().toLocaleDateString() };
+    currentUser.withdrawals = currentUser.withdrawals || [];
+    currentUser.withdrawals.push(req);
+    currentUser.transactions = currentUser.transactions || [];
+    currentUser.transactions.push({
+        type: 'withdrawal', icon: '📤', title: 'Withdrawal Request', desc: 'Pending admin approval',
+        amount: -amount, date: new Date().toLocaleDateString()
+    });
+    saveUser(currentUser);
+    closeModal('withdraw-modal');
+    renderAll();
+    alert('Withdrawal request submitted! Admin will review and approve.');
+}
+function renderWithdrawals() {
+    const list = document.getElementById('withdrawal-list');
+    const wds = currentUser.withdrawals || [];
+    if (wds.length === 0) {
+        list.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>No withdrawals yet.</p></div>';
+        return;
+    }
+    list.innerHTML = wds.slice().reverse().map(function(wd) {
+        const iconClass = wd.status === 'approved' ? 'in' : wd.status === 'rejected' ? 'out' : 'pending';
+        const icon = wd.status === 'approved' ? '✅' : wd.status === 'rejected' ? '❌' : '⏳';
+        return '<div class="tx-card"><div class="tx-icon ' + iconClass + '">' + icon + '</div><div class="tx-info"><div class="tx-title">Withdrawal <span class="badge ' + wd.status + '">' + wd.status + '</span></div><div class="tx-desc">' + wd.date + '</div></div><div class="tx-amount red">-$' + formatMoney(wd.amount) + '</div></div>';
+    }).join('');
+}
+
+// ===================== ACCOUNT =====================
+function toggleBankForm() {
+    const f = document.getElementById('bank-form');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+function toggleCryptoForm() {
+    const f = document.getElementById('crypto-form');
+    f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+function saveBankDetails() {
+    currentUser.bankDetails = {
+        bankName: document.getElementById('bank-name').value,
+        accountName: document.getElementById('account-name').value,
+        accountNumber: document.getElementById('account-number').value,
+        routingNumber: document.getElementById('routing-number').value
+    };
+    saveUser(currentUser);
+    toggleBankForm();
+    renderAccountDetails();
+    updateWithdrawMethods();
+    alert('Bank details saved!');
+}
+function saveCryptoDetails() {
+    currentUser.cryptoWallets = currentUser.cryptoWallets || [];
+    currentUser.cryptoWallets.push({
+        type: document.getElementById('crypto-type').value,
+        address: document.getElementById('wallet-address').value
+    });
+    saveUser(currentUser);
+    toggleCryptoForm();
+    renderAccountDetails();
+    updateWithdrawMethods();
+    alert('Crypto wallet saved!');
+}
+function renderAccountDetails() {
+    const bankDiv = document.getElementById('bank-details-display');
+    if (currentUser.bankDetails) {
+        bankDiv.innerHTML = '<div style="background:#0a0a0f;padding:14px;border-radius:12px;border:1px solid var(--border);"><div style="font-size:13px;color:#888;margin-bottom:4px;">Bank</div><div style="font-size:15px;font-weight:600;">' + currentUser.bankDetails.bankName + '</div><div style="font-size:13px;color:#888;margin-top:8px;">Account Name</div><div style="font-size:14px;">' + currentUser.bankDetails.accountName + '</div><div style="font-size:13px;color:#888;margin-top:8px;">Account Number</div><div style="font-size:14px;color:var(--gold);">' + currentUser.bankDetails.accountNumber + '</div></div>';
+    }
+    const cryptoDiv = document.getElementById('crypto-details-display');
+    if ((currentUser.cryptoWallets || []).length > 0) {
+        cryptoDiv.innerHTML = currentUser.cryptoWallets.map(function(w) {
+            return '<div style="background:#0a0a0f;padding:14px;border-radius:12px;border:1px solid var(--border);margin-bottom:8px;"><div style="font-size:13px;color:#888;margin-bottom:4px;">' + w.type + '</div><div style="font-size:12px;word-break:break-all;color:var(--gold);">' + w.address + '</div></div>';
+        }).join('');
+    }
+}
+
+// ===================== ADMIN CONFIRMATION =====================
+function checkAdminConfirmation() {
+    const key = 'uvc_pending_confirm_' + currentUser.id;
+    const pending = localStorage.getItem(key);
+    if (pending) {
+        try {
+            const data = JSON.parse(pending);
+            if (data.confirmed && !data.seen) {
+                currentUser.balance = (currentUser.balance || 0) + (data.amount || 0);
+                currentUser.transactions = currentUser.transactions || [];
+                currentUser.transactions.push({
+                    type: 'deposit', icon: '💰', title: 'Deposit Confirmed', desc: 'By admin',
+                    amount: data.amount, date: new Date().toLocaleDateString()
+                });
+                saveUser(currentUser);
+                
+                sendDepositConfirmedEmail(currentUser.email, currentUser.name, data.amount);
+                
+                document.getElementById('congrats-message').textContent =
+                    'Your deposit of $' + formatMoney(data.amount) + ' has been confirmed by admin. Your balance has been updated!';
+                document.getElementById('congrats-popup').classList.add('show');
+            }
+        } catch(e) {}
+    }
+}
+function markCongratsSeen() {
+    const key = 'uvc_pending_confirm_' + currentUser.id;
+    const pending = localStorage.getItem(key);
+    if (pending) {
+        try { const data = JSON.parse(pending); data.seen = true; localStorage.setItem(key, JSON.stringify(data)); }
+        catch(e) {}
+    }
+    closeModal('congrats-popup');
+    renderAll();
+}
+
+// ===================== CHAT BOT =====================
+function toggleChat() {
+    document.getElementById('chat-panel').classList.toggle('show');
+}
+function sendChat() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    const body = document.getElementById('chat-body');
+    body.innerHTML += '<div class="chat-msg user">' + escapeHtml(msg) + '</div>';
+    input.value = '';
+    body.scrollTop = body.scrollHeight;
+    setTimeout(function() {
+        const reply = getBotReply(msg);
+        body.innerHTML += '<div class="chat-msg bot">' + reply + '</div>';
+        body.scrollTop = body.scrollHeight;
+    }, 600);
+}
+function getBotReply(msg) {
+    const lower = msg.toLowerCase();
+    if (lower.indexOf('deposit') !== -1) return 'To deposit, go to Wallet → Deposit and send funds to the provided address. Then contact admin with your User ID.';
+    if (lower.indexOf('withdraw') !== -1) return 'To withdraw, go to Wallet → Withdraw. Make sure you have added your bank or crypto details in Account first.';
+    if (lower.indexOf('invest') !== -1) return 'Go to the Invest tab and choose a plan: Starter (5%), Growth (8%), Premium (12%), or Elite (18%).';
+    if (lower.indexOf('referral') !== -1) return 'Share your referral link from the Referrals tab. You earn 10% lifetime commission!';
+    if (lower.indexOf('balance') !== -1) return 'Your balance is shown on the Dashboard and Wallet tabs.';
+    if (lower.indexOf('hello') !== -1 || lower.indexOf('hi') !== -1) return 'Hello! How can I assist you with UnionVest Capital today?';
+    return "I'm here to help! Ask me about deposits, withdrawals, investments, or referrals.";
+}
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+// ===================== UTILS =====================
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function copyRef() {
+    const text = document.getElementById('ref-link').textContent;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() { alert('Referral link copied!'); });
+    } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); document.body.removeChild(ta);
+        alert('Referral link copied!');
+    }
+}
+
+// ===================== ADMIN PANEL =====================
+function doAdminLogin() {
+    const pass = document.getElementById('admin-pass').value;
+    if (pass === ADMIN_PASS) {
+        hideAllScreens();
+        document.getElementById('admin-dashboard').classList.remove('hidden');
+        loadAdminData();
+        setInterval(loadAdminData, 10000);
+    } else {
+        alert('Wrong password! Use: admin123');
+    }
+}
+function adminLogout() {
+    document.getElementById('admin-pass').value = '';
+    showLogin();
+}
+function getAllUsers() {
+    const users = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('uvc_user_')) {
+            try { users.push(JSON.parse(localStorage.getItem(key))); }
+            catch(e) {}
+        }
+    }
+    return users;
+}
+function loadAdminData() {
+    const users = getAllUsers();
+    let totalVol = 0;
+    let allWds = [];
+    let activeInvestors = 0;
+    
+    users.forEach(function(u) {
+        if (u.transactions) u.transactions.forEach(function(t) { if (t.type === 'deposit' && t.amount > 0) totalVol += t.amount; });
+        if (u.withdrawals) u.withdrawals.forEach(function(w) { allWds.push(Object.assign({}, w, {userId: u.id})); });
+        if ((u.activeInvestments || 0) > 0) activeInvestors++;
+    });
+    
+    document.getElementById('admin-total-users').textContent = users.length;
+    document.getElementById('admin-total-volume').textContent = '$' + totalVol.toLocaleString('en-US', {minimumFractionDigits: 2});
+    document.getElementById('admin-active-investors').textContent = activeInvestors;
+
+    let pendingDeps = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('uvc_pending_confirm_')) {
+            try { if (!JSON.parse(localStorage.getItem(key)).confirmed) pendingDeps++; }
+            catch(e) {}
+        }
+    }
+    document.getElementById('admin-pending-deps').textContent = pendingDeps;
+
+    const pendingWds = allWds.filter(function(w) { return w.status === 'pending'; });
+    document.getElementById('admin-pending-wds').textContent = pendingWds.length;
+
+    const usersDiv = document.getElementById('admin-users-list');
+    if (users.length === 0) {
+        usersDiv.innerHTML = '<div class="empty">No users registered yet.</div>';
+    } else {
+        usersDiv.innerHTML = users.map(function(u) {
+            const hasActive = (u.activeInvestments || 0) > 0;
+            const activeBadge = hasActive ? '<span class="active-indicator">📊 Active</span>' : '';
+            const planInfo = u.plan ? '<p>📈 Plan: ' + u.plan.name + ' (' + u.plan.rate + '%) | $' + u.plan.amount.toLocaleString() + '</p>' : '';
+            const bankInfo = u.bankDetails ? '<p>🏦 Bank: ' + u.bankDetails.bankName + ' | ' + u.bankDetails.accountName + ' | ' + u.bankDetails.accountNumber + '</p>' : '';
+            const cryptoInfo = u.cryptoWallets && u.cryptoWallets.length ? '<p>₿ Wallets: ' + u.cryptoWallets.map(function(w) { return w.type; }).join(', ') + '</p>' : '';
+            return '<div class="user-card"><h4>👤 ' + (u.name || 'User') + ' ' + activeBadge + ' <small style="color:#555;">(ID: <span class="copy-id" onclick="copyText(\'' + u.id + '\')">' + u.id + '</span>)</small></h4><p>💰 Balance: <strong style="color:var(--gold);">$' + ((u.balance || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + '</strong></p><p>📊 Active: $' + ((u.activeInvestments || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + ' | 📈 Daily ROI: $' + ((u.dailyROI || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + '</p><p>👥 Referral: $' + ((u.referralEarnings || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + '</p>' + planInfo + bankInfo + cryptoInfo + '</div>';
+        }).join('');
+    }
+    const wdTable = document.getElementById('admin-withdrawals-table');
+    if (pendingWds.length === 0) {
+        wdTable.innerHTML = '<tr><td colspan="5" class="empty">No pending withdrawals.</td></tr>';
+    } else {
+        wdTable.innerHTML = pendingWds.map(function(w) {
+            return '<tr><td><span class="copy-id" onclick="copyText(\'' + w.userId + '\')">' + w.userId + '</span></td><td style="color:var(--gold);font-weight:700;">$' + w.amount.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td><td>' + w.method + '</td><td>' + w.date + '</td><td><button class="btn-small btn-green" onclick="approveWD(\'' + w.userId + '\',\'' + w.id + '\')" style="margin-right:6px;">✅</button><button class="btn-small btn-red" onclick="rejectWD(\'' + w.userId + '\',\'' + w.id + '\')">❌</button></td></tr>';
+        }).join('');
+    }
+}
+
+function addBalance() {
+    const userId = document.getElementById('target-user-id').value.trim();
+    const amount = parseFloat(document.getElementById('add-amount').value);
+    const type = document.getElementById('add-type').value;
+
+    if (!userId || !amount || amount <= 0) {
+        alert('Enter valid User ID and amount');
+        return;
+    }
+
+    localStorage.setItem('uvc_pending_confirm_' + userId, JSON.stringify({
+        amount: amount,
+        type: type,
+        confirmed: true,
+        seen: false,
+        date: new Date().toISOString()
+    }));
+
+    const users = getAllUsers();
+    const user = users.find(function(u) { return u.id === userId; });
+    if (user) {
+        user.balance = (user.balance || 0) + amount;
+        user.transactions = user.transactions || [];
+        user.transactions.push({
+            type: 'deposit',
+            icon: '💰',
+            title: type === 'bonus' ? 'Admin Bonus' : type === 'referral' ? 'Referral Bonus' : 'Deposit Confirmed',
+            desc: 'Added by admin',
+            amount: amount,
+            date: new Date().toLocaleDateString()
+        });
+        localStorage.setItem('uvc_user_' + userId, JSON.stringify(user));
+        
+        sendDepositConfirmedEmail(user.email, user.name, amount);
+    }
+
+    alert('✅ $' + amount.toLocaleString() + ' added to ' + userId + '!\n\nUser will see 🎉 popup on dashboard. Email sent.');
+    document.getElementById('target-user-id').value = '';
+    document.getElementById('add-amount').value = '';
+    loadAdminData();
+}
+
+function approveWD(userId, wdId) {
+    updateWD(userId, wdId, 'approved');
+    alert('✅ Withdrawal approved!');
+    loadAdminData();
+}
+function rejectWD(userId, wdId) {
+    updateWD(userId, wdId, 'rejected');
+    const key = 'uvc_user_' + userId;
+    const saved = localStorage.getItem(key);
+    if (saved) {
+        const user = JSON.parse(saved);
+        const wd = (user.withdrawals || []).find(function(w) { return w.id === wdId; });
+        if (wd) {
+            user.balance = (user.balance || 0) + wd.amount;
+            user.transactions.push({
+                type: 'deposit',
+                icon: '↩️',
+                title: 'Withdrawal Refunded',
+                desc: 'Rejected by admin',
+                amount: wd.amount,
+                date: new Date().toLocaleDateString()
+            });
+            localStorage.setItem(key, JSON.stringify(user));
+        }
+    }
+    alert('❌ Withdrawal rejected. Amount refunded.');
+    loadAdminData();
+}
+function updateWD(userId, wdId, status) {
+    const key = 'uvc_user_' + userId;
+    const saved = localStorage.getItem(key);
+    if (!saved) return;
+    const user = JSON.parse(saved);
+    const wd = (user.withdrawals || []).find(function(w) { return w.id === wdId; });
+    if (wd) wd.status = status;
+    localStorage.setItem(key, JSON.stringify(user));
+}
+function copyText(text) {
+    navigator.clipboard && navigator.clipboard.writeText(text).then(function() { alert('Copied: ' + text); }) || alert(text);
+}
+
+// ===================== INIT =====================
+const savedUserId = localStorage.getItem('uvc_current_user');
+if (savedUserId) {
+    enterDashboard();
+} else {
+    showLogin();
+}
+</script>
+</body>
+</html>

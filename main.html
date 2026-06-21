@@ -5,215 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UnionVest Capital</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <!-- EmailJS for sending emails without backend -->
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
-            --bg: #0a0a0f;
-            --bg-card: #13131f;
-            --bg-hover: #1a1a2e;
-            --border: #1a1a2e;
-            --gold: #d4af37;
-            --success: #22c55e;
-            --danger: #ef4444;
-            --text: #fff;
-            --text-muted: #888;
+            --bg: #0a0a0f; --bg-card: #13131f; --bg-hover: #1a1a2e; --border: #1a1a2e;
+            --gold: #d4af37; --success: #22c55e; --danger: #ef4444; --text: #fff; --text-muted: #888;
         }
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            padding-bottom: 80px;
-        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
         .hidden { display: none !important; }
-        .auth-screen {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        .auth-box {
-            background: var(--bg-card);
-            border-radius: 24px;
-            padding: 40px 32px;
-            width: 100%;
-            max-width: 380px;
-            border: 1px solid var(--border);
-            text-align: center;
-        }
+        .auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+        .auth-box { background: var(--bg-card); border-radius: 24px; padding: 40px 32px; width: 100%; max-width: 380px; border: 1px solid var(--border); text-align: center; }
         .auth-box .logo { font-size: 48px; margin-bottom: 8px; }
         .auth-box h1 { font-size: 24px; color: var(--gold); margin-bottom: 4px; }
         .auth-box p { color: var(--text-muted); font-size: 14px; margin-bottom: 32px; }
-        input, select, textarea {
-            width: 100%; padding: 16px; background: var(--bg);
-            border: 1px solid var(--border); border-radius: 14px;
-            color: var(--text); font-size: 15px; margin-bottom: 14px; outline: none;
-            font-family: inherit;
-        }
+        input, select, textarea { width: 100%; padding: 16px; background: var(--bg); border: 1px solid var(--border); border-radius: 14px; color: var(--text); font-size: 15px; margin-bottom: 14px; outline: none; font-family: inherit; }
         input:focus, select:focus { border-color: var(--gold); }
-        .btn-primary {
-            width: 100%; padding: 16px; background: var(--gold);
-            color: var(--bg); border: none; border-radius: 14px;
-            font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 16px;
-        }
+        .btn-primary { width: 100%; padding: 16px; background: var(--gold); color: var(--bg); border: none; border-radius: 14px; font-size: 16px; font-weight: 700; cursor: pointer; margin-bottom: 16px; }
         .btn-primary:hover { opacity: 0.9; }
         .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
-        .btn-secondary {
-            width: 100%; padding: 12px; background: var(--bg-hover);
-            color: var(--gold); border: 1px solid var(--gold); border-radius: 10px;
-            font-size: 14px; font-weight: 600; cursor: pointer;
-        }
-        .link {
-            color: var(--gold); font-size: 14px; cursor: pointer;
-            background: none; border: none; padding: 0; width: auto;
-        }
+        .btn-secondary { width: 100%; padding: 12px; background: var(--bg-hover); color: var(--gold); border: 1px solid var(--gold); border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .link { color: var(--gold); font-size: 14px; cursor: pointer; background: none; border: none; padding: 0; width: auto; }
         .toggle-text { color: var(--text-muted); font-size: 14px; }
-        .otp-display {
-            background: var(--bg);
-            border: 2px dashed var(--gold);
-            border-radius: 12px;
-            padding: 16px;
-            margin: 16px 0;
-            font-size: 28px;
-            font-weight: 800;
-            color: var(--gold);
-            letter-spacing: 8px;
-        }
-        .otp-timer {
-            color: var(--danger);
-            font-size: 13px;
-            margin-bottom: 12px;
-        }
-        .resend-btn {
-            background: none;
-            border: none;
-            color: var(--gold);
-            font-size: 13px;
-            cursor: pointer;
-            text-decoration: underline;
-        }
-        .resend-btn:disabled {
-            color: #555;
-            cursor: not-allowed;
-            text-decoration: none;
-        }
-        .header {
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--border);
-        }
-        .logo {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .logo-icon {
-            width: 32px; height: 32px;
-            background: var(--gold);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 18px;
-        }
-        .logo-text {
-            font-size: 20px; font-weight: 800;
-            color: var(--gold);
-        }
-        .logout-btn {
-            background: var(--danger); color: #fff;
-            border: none; padding: 8px 16px; border-radius: 10px;
-            font-size: 12px; font-weight: 700; cursor: pointer;
-        }
-        .nav {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding: 12px 20px;
-        }
-        .nav-btn {
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-        }
-        .nav-btn.active {
-            background: var(--bg-hover);
-            color: var(--gold);
-        }
-        .container {
-            padding: 20px;
-            max-width: 480px;
-            margin: 0 auto;
-        }
+        .otp-display { background: var(--bg); border: 2px dashed var(--gold); border-radius: 12px; padding: 16px; margin: 16px 0; font-size: 28px; font-weight: 800; color: var(--gold); letter-spacing: 8px; }
+        .otp-timer { color: var(--danger); font-size: 13px; margin-bottom: 12px; }
+        .resend-btn { background: none; border: none; color: var(--gold); font-size: 13px; cursor: pointer; text-decoration: underline; }
+        .resend-btn:disabled { color: #555; cursor: not-allowed; text-decoration: none; }
+        .header { padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); }
+        .logo { display: flex; align-items: center; gap: 8px; }
+        .logo-icon { width: 32px; height: 32px; background: var(--gold); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .logo-text { font-size: 20px; font-weight: 800; color: var(--gold); }
+        .logout-btn { background: var(--danger); color: #fff; border: none; padding: 8px 16px; border-radius: 10px; font-size: 12px; font-weight: 700; cursor: pointer; }
+        .nav { display: flex; gap: 8px; overflow-x: auto; padding: 12px 20px; }
+        .nav-btn { padding: 8px 16px; border-radius: 20px; border: none; background: transparent; color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .nav-btn.active { background: var(--bg-hover); color: var(--gold); }
+        .container { padding: 20px; max-width: 480px; margin: 0 auto; }
         .welcome { margin-bottom: 24px; }
         .welcome h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
         .welcome p { color: var(--text-muted); font-size: 14px; }
-        .stat-card {
-            background: var(--bg-card);
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border);
-        }
-        .stat-icon {
-            width: 44px; height: 44px;
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 22px;
-            margin-bottom: 16px;
-        }
+        .stat-card { background: var(--bg-card); border-radius: 20px; padding: 24px; margin-bottom: 16px; border: 1px solid var(--border); }
+        .stat-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 16px; }
         .stat-icon.blue { background: rgba(59,130,246,0.15); }
         .stat-icon.green { background: rgba(34,197,94,0.15); }
         .stat-icon.yellow { background: rgba(234,179,8,0.15); }
         .stat-icon.purple { background: rgba(168,85,247,0.15); }
-        .stat-amount {
-            font-size: 32px; font-weight: 800;
-            margin-bottom: 4px;
-        }
+        .stat-amount { font-size: 32px; font-weight: 800; margin-bottom: 4px; }
         .stat-label { color: var(--text-muted); font-size: 14px; }
         .zero-balance { color: #555 !important; }
-        .two-col {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .section-title {
-            font-size: 18px; font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .tx-card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            border: 1px solid var(--border);
-        }
-        .tx-icon {
-            width: 44px; height: 44px;
-            border-radius: 12px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
-        }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .tx-card { background: var(--bg-card); border-radius: 16px; padding: 16px; margin-bottom: 12px; display: flex; align-items: center; gap: 14px; border: 1px solid var(--border); }
+        .tx-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
         .tx-icon.in { background: rgba(34,197,94,0.15); color: #22c55e; }
         .tx-icon.out { background: rgba(239,68,68,0.15); color: #ef4444; }
         .tx-icon.pending { background: rgba(234,179,8,0.15); color: #eab308; }
@@ -224,422 +69,130 @@
         .tx-amount.green { color: #22c55e; }
         .tx-amount.red { color: #ef4444; }
         .tx-amount.yellow { color: #eab308; }
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: #555;
-        }
+        .empty-state { text-align: center; padding: 40px 20px; color: #555; }
         .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
         .empty-state p { font-size: 14px; }
-        .bottom-nav {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: #0f0f1a;
-            border-top: 1px solid var(--border);
-            display: flex;
-            justify-content: space-around;
-            padding: 10px 0;
-            z-index: 100;
-        }
-        .bottom-btn {
-            background: none; border: none;
-            color: #555;
-            font-size: 11px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            padding: 4px 16px;
-        }
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0f0f1a; border-top: 1px solid var(--border); display: flex; justify-content: space-around; padding: 10px 0; z-index: 100; }
+        .bottom-btn { background: none; border: none; color: #555; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; padding: 4px 16px; }
         .bottom-btn.active { color: var(--gold); }
         .bottom-btn .icon { font-size: 22px; }
-        .robot-btn {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            background: var(--gold);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(212,175,55,0.4);
-            z-index: 200;
-            border: none;
-            animation: robotPulse 2s ease infinite;
-        }
-        @keyframes robotPulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 4px 20px rgba(212,175,55,0.4); }
-            50% { transform: scale(1.05); box-shadow: 0 6px 30px rgba(212,175,55,0.6); }
-        }
-        .popup-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            padding: 20px;
-        }
+        .popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
         .popup-overlay.show { display: flex; }
-        .popup {
-            background: var(--bg-card);
-            border-radius: 24px;
-            padding: 40px 32px;
-            text-align: center;
-            max-width: 340px;
-            width: 100%;
-            border: 1px solid var(--border);
-            animation: popIn 0.4s ease;
-        }
-        @keyframes popIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .popup-sticker {
-            font-size: 80px;
-            margin-bottom: 16px;
-            animation: bounce 0.6s ease infinite alternate;
-        }
-        @keyframes bounce {
-            from { transform: translateY(0); }
-            to { transform: translateY(-10px); }
-        }
-        .popup h2 {
-            font-size: 22px;
-            font-weight: 800;
-            color: var(--gold);
-            margin-bottom: 8px;
-        }
-        .popup p {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
-        .popup-btn {
-            background: var(--gold);
-            color: var(--bg);
-            border: none;
-            padding: 14px 40px;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            width: 100%;
-        }
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 6px;
-            font-size: 10px;
-            font-weight: 700;
-            margin-left: 6px;
-        }
+        .popup { background: var(--bg-card); border-radius: 24px; padding: 40px 32px; text-align: center; max-width: 340px; width: 100%; border: 1px solid var(--border); animation: popIn 0.4s ease; }
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .popup-sticker { font-size: 80px; margin-bottom: 16px; animation: bounce 0.6s ease infinite alternate; }
+        @keyframes bounce { from { transform: translateY(0); } to { transform: translateY(-10px); } }
+        .popup h2 { font-size: 22px; font-weight: 800; color: var(--gold); margin-bottom: 8px; }
+        .popup p { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+        .popup-btn { background: var(--gold); color: var(--bg); border: none; padding: 14px 40px; border-radius: 12px; font-size: 15px; font-weight: 700; cursor: pointer; width: 100%; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; margin-left: 6px; }
         .badge.pending { background: rgba(234,179,8,0.2); color: #eab308; }
         .badge.approved { background: rgba(34,197,94,0.2); color: #22c55e; }
         .badge.rejected { background: rgba(239,68,68,0.2); color: #ef4444; }
-        .badge.active-inv { background: rgba(34,197,94,0.2); color: #22c55e; }
-        .admin-header {
-            padding: 20px;
-            background: var(--bg-card);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .admin-header h1 {
-            color: var(--gold);
-            font-size: 20px;
-        }
-        .admin-container {
-            padding: 20px;
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .stat-box {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 20px;
-            border: 1px solid var(--border);
-        }
-        .stat-box .num {
-            font-size: 26px;
-            font-weight: 800;
-            color: var(--gold);
-        }
-        .stat-box .label {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-        .section-admin {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border);
-        }
-        .section-admin h2 {
-            font-size: 16px;
-            margin-bottom: 16px;
-            color: var(--gold);
-        }
-        .form-row {
-            display: grid;
-            grid-template-columns: 2fr 1fr 1fr auto;
-            gap: 10px;
-            align-items: end;
-        }
-        .form-row input, .form-row select {
-            margin-bottom: 0;
-            padding: 12px;
-            border-radius: 10px;
-            font-size: 14px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            color: var(--text);
-        }
-        .btn-small {
-            width: auto;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 13px;
-            border: none;
-            cursor: pointer;
-            font-weight: 700;
-        }
+        .admin-header { padding: 20px; background: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .admin-header h1 { color: var(--gold); font-size: 20px; }
+        .admin-container { padding: 20px; max-width: 900px; margin: 0 auto; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 20px; }
+        .stat-box { background: var(--bg-card); border-radius: 16px; padding: 20px; border: 1px solid var(--border); }
+        .stat-box .num { font-size: 26px; font-weight: 800; color: var(--gold); }
+        .stat-box .label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .section-admin { background: var(--bg-card); border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+        .section-admin h2 { font-size: 16px; margin-bottom: 16px; color: var(--gold); }
+        .form-row { display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 10px; align-items: end; }
+        .form-row input, .form-row select { margin-bottom: 0; padding: 12px; border-radius: 10px; font-size: 14px; background: var(--bg); border: 1px solid var(--border); color: var(--text); }
+        .btn-small { width: auto; padding: 12px 20px; border-radius: 10px; font-size: 13px; border: none; cursor: pointer; font-weight: 700; }
         .btn-green { background: var(--success); color: #fff; }
         .btn-red { background: var(--danger); color: #fff; }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-        }
-        th {
-            text-align: left;
-            padding: 12px 8px;
-            color: var(--text-muted);
-            border-bottom: 1px solid var(--border);
-            font-weight: 600;
-        }
-        td {
-            padding: 12px 8px;
-            border-bottom: 1px solid var(--border);
-        }
-        .user-card {
-            background: var(--bg);
-            padding: 16px;
-            border-radius: 12px;
-            margin-bottom: 10px;
-            border: 1px solid var(--border);
-        }
-        .user-card h4 {
-            color: var(--gold);
-            margin-bottom: 8px;
-            font-size: 15px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .user-card p {
-            font-size: 13px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-        .copy-id {
-            color: #3b82f6;
-            text-decoration: underline;
-            cursor: pointer;
-        }
-        .empty {
-            text-align: center;
-            padding: 30px;
-            color: var(--text-muted);
-            font-size: 14px;
-        }
-        .active-indicator {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            color: #22c55e;
-            background: rgba(34,197,94,0.15);
-            padding: 2px 8px;
-            border-radius: 20px;
-        }
-        .chat-panel {
-            position: fixed;
-            bottom: 90px;
-            right: 20px;
-            width: 320px;
-            max-height: 450px;
-            background: var(--bg-card);
-            border-radius: 20px;
-            border: 1px solid var(--border);
-            z-index: 300;
-            display: none;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-        .chat-panel.show { display: flex; }
-        .chat-header {
-            padding: 16px;
-            background: var(--bg-hover);
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .chat-header .robot-avatar {
-            width: 36px; height: 36px;
-            background: var(--gold);
-            border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-        }
-        .chat-header h3 {
-            font-size: 15px; flex: 1;
-        }
-        .chat-header .close-chat {
-            background: none; border: none;
-            color: var(--text-muted); font-size: 20px;
-            cursor: pointer;
-        }
-        .chat-body {
-            flex: 1;
-            padding: 16px;
-            overflow-y: auto;
-        }
-        .chat-msg {
-            margin-bottom: 12px;
-            padding: 10px 14px;
-            border-radius: 14px;
-            font-size: 13px;
-            max-width: 85%;
-        }
-        .chat-msg.bot {
-            background: var(--bg-hover);
-            color: var(--text);
-            align-self: flex-start;
-        }
-        .chat-msg.user {
-            background: var(--gold);
-            color: var(--bg);
-            margin-left: auto;
-            text-align: right;
-        }
-        .chat-input-area {
-            padding: 12px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            gap: 8px;
-        }
-        .chat-input-area input {
-            flex: 1;
-            margin-bottom: 0;
-            padding: 10px 14px;
-            font-size: 13px;
-        }
-        .chat-input-area button {
-            width: auto;
-            padding: 10px 16px;
-            font-size: 13px;
-        }
-        .plan-card {
-            background: var(--bg-card);
-            border-radius: 20px;
-            padding: 24px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border);
-        }
-        .plan-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .plan-header h2 { font-size: 22px; }
-        .plan-rate {
-            font-size: 14px;
-            font-weight: 700;
-        }
-        .plan-amount {
-            font-size: 36px;
-            font-weight: 800;
-            margin-bottom: 4px;
-        }
-        .plan-days {
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-        .plan-range {
-            color: #555;
-            font-size: 14px;
-            margin-bottom: 16px;
-        }
-        .deposit-box {
-            background: var(--bg);
-            padding: 12px;
-            border-radius: 10px;
-            margin-bottom: 8px;
-            border: 1px solid var(--border);
-            text-align: left;
-        }
-        .deposit-box .label {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-bottom: 4px;
-        }
-        .deposit-box .value {
-            font-size: 13px;
-            word-break: break-all;
-            color: var(--gold);
-        }
-        .toast {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 20px;
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-            animation: slideIn 0.3s ease;
-        }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        th { text-align: left; padding: 12px 8px; color: var(--text-muted); border-bottom: 1px solid var(--border); font-weight: 600; }
+        td { padding: 12px 8px; border-bottom: 1px solid var(--border); }
+        .user-card { background: var(--bg); padding: 16px; border-radius: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
+        .user-card h4 { color: var(--gold); margin-bottom: 8px; font-size: 15px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .user-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+        .copy-id { color: #3b82f6; text-decoration: underline; cursor: pointer; }
+        .empty { text-align: center; padding: 30px; color: var(--text-muted); font-size: 14px; }
+        .active-indicator { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #22c55e; background: rgba(34,197,94,0.15); padding: 2px 8px; border-radius: 20px; }
+        .toast { position: fixed; top: 20px; right: 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; z-index: 2000; display: none; align-items: center; gap: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); animation: slideIn 0.3s ease; }
         .toast.show { display: flex; }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .toast-icon { font-size: 24px; }
         .toast-text { font-size: 14px; }
+
+        /* ======= FEATURE 1: USER CHAT SYSTEM ======= */
+        .user-chat-btn { position: fixed; bottom: 90px; right: 20px; width: 56px; height: 56px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 20px rgba(212,175,55,0.4); z-index: 200; border: none; transition: transform 0.2s; }
+        .user-chat-btn:hover { transform: scale(1.05); }
+        .user-chat-btn .unread-dot { position: absolute; top: -2px; right: -2px; width: 18px; height: 18px; background: var(--danger); border-radius: 50%; font-size: 10px; font-weight: 700; color: #fff; display: flex; align-items: center; justify-content: center; }
+        .chat-panel { position: fixed; bottom: 90px; right: 20px; width: 320px; max-height: 450px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border); z-index: 300; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        .chat-panel.show { display: flex; }
+        .chat-header { padding: 16px; background: var(--bg-hover); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .chat-header .robot-avatar { width: 36px; height: 36px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .chat-header h3 { font-size: 15px; flex: 1; }
+        .chat-header .close-chat { background: none; border: none; color: var(--text-muted); font-size: 20px; cursor: pointer; }
+        .chat-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; }
+        .chat-msg { margin-bottom: 12px; padding: 10px 14px; border-radius: 14px; font-size: 13px; max-width: 85%; word-break: break-word; }
+        .chat-msg.bot { background: var(--bg-hover); color: var(--text); align-self: flex-start; }
+        .chat-msg.user { background: var(--gold); color: var(--bg); margin-left: auto; text-align: right; }
+        .chat-msg.admin { background: var(--gold); color: var(--bg); margin-left: auto; text-align: right; }
+        .chat-msg img { max-width: 100%; border-radius: 8px; margin-top: 6px; display: block; }
+        .chat-msg .msg-time { font-size: 10px; color: #666; margin-top: 4px; display: block; }
+        .chat-msg.admin .msg-time { color: rgba(0,0,0,0.5); }
+        .chat-input-area { padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+        .chat-input-area input { flex: 1; margin-bottom: 0; padding: 10px 14px; font-size: 13px; }
+        .chat-input-area button { width: auto; padding: 10px 16px; font-size: 13px; }
+        .chat-input-area .attach-btn { background: var(--bg-hover); border: 1px solid var(--border); color: var(--gold); border-radius: 10px; padding: 10px 12px; cursor: pointer; font-size: 16px; }
+
+        /* ======= FEATURE 2: DEPOSIT CHAT TRIGGER ======= */
+        .deposit-chat-trigger { display: none; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-top: 16px; text-align: center; animation: slideUp 0.4s ease; }
+        .deposit-chat-trigger.show { display: block; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .deposit-chat-trigger .chat-icon { font-size: 36px; margin-bottom: 8px; }
+        .deposit-chat-trigger p { color: var(--text-muted); font-size: 14px; margin-bottom: 12px; }
+        .deposit-chat-btn { background: var(--gold); color: var(--bg); border: none; padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; }
+
+        /* ======= FEATURE 3: INVESTMENT COUNTDOWN TIMER ======= */
+        .investment-card { background: var(--bg-card); border-radius: 20px; padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+        .investment-card .invest-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .investment-card .invest-name { font-size: 16px; font-weight: 700; color: var(--gold); }
+        .investment-card .invest-amount { font-size: 20px; font-weight: 800; }
+        .investment-card .invest-details { display: flex; justify-content: space-between; margin-bottom: 12px; }
+        .investment-card .invest-detail { text-align: center; }
+        .investment-card .invest-detail .label { font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+        .investment-card .invest-detail .value { font-size: 14px; font-weight: 600; }
+        .countdown-timer { background: var(--bg); border-radius: 12px; padding: 12px; text-align: center; border: 1px solid var(--border); }
+        .countdown-timer .timer-label { font-size: 11px; color: var(--text-muted); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+        .countdown-timer .timer-display { font-size: 24px; font-weight: 800; color: var(--gold); font-family: 'Courier New', monospace; }
+        .countdown-timer .timer-bar { width: 100%; height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+        .countdown-timer .timer-bar-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 1s linear; }
+
+        /* ======= ADMIN CHAT PANEL ======= */
+        .admin-chat-section { margin-top: 20px; }
+        .admin-chat-user-list { max-height: 300px; overflow-y: auto; }
+        .admin-chat-user-item { background: var(--bg); border-radius: 12px; padding: 12px; margin-bottom: 8px; cursor: pointer; border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; transition: border-color 0.2s; }
+        .admin-chat-user-item:hover { border-color: var(--gold); }
+        .admin-chat-user-item .unread-badge { background: var(--danger); color: #fff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; margin-left: auto; }
+        .admin-chat-window { position: fixed; bottom: 20px; right: 20px; width: 360px; max-height: 500px; background: var(--bg-card); border-radius: 20px; border: 1px solid var(--border); z-index: 500; display: none; flex-direction: column; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.6); }
+        .admin-chat-window.show { display: flex; }
+        .admin-chat-header { padding: 16px; background: var(--bg-hover); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+        .admin-chat-header .back-btn { background: none; border: none; color: var(--text-muted); font-size: 18px; cursor: pointer; }
+        .admin-chat-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-chat-input-area { padding: 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+        .admin-chat-input-area input { flex: 1; margin-bottom: 0; padding: 10px 14px; font-size: 13px; }
+        .admin-chat-input-area .attach-btn { background: var(--bg-hover); border: 1px solid var(--border); color: var(--gold); border-radius: 10px; padding: 10px 12px; cursor: pointer; font-size: 16px; }
+        .admin-chat-input-area button { width: auto; padding: 10px 16px; font-size: 13px; }
+
+        @media (max-width: 480px) {
+            .admin-chat-window { width: calc(100% - 40px); right: 10px; left: 10px; }
+            .chat-panel, .user-chat-btn { right: 10px; }
+        }
     </style>
 </head>
 <body>
 
-<!-- ==================== TOAST NOTIFICATION ==================== -->
 <div class="toast" id="toast">
     <span class="toast-icon" id="toast-icon">📧</span>
     <span class="toast-text" id="toast-text">Notification</span>
 </div>
 
-<!-- ==================== LOGIN ==================== -->
 <div id="login-screen" class="auth-screen">
     <div class="auth-box">
         <div class="logo">📈</div>
@@ -649,11 +202,12 @@
         <input type="password" id="login-pass" placeholder="Password" onkeypress="if(event.key==='Enter')doLogin()">
         <button class="btn-primary" id="login-btn" onclick="doLogin()">Login</button>
         <p class="toggle-text">No account? <button class="link" onclick="showRegister()">Register</button></p>
-        <p style="margin-top:12px;font-size:12px;color:#333;cursor:pointer;" ondblclick="showAdminLogin()" title="Double-click for admin">.</p>
+        <p style="margin-top:16px;font-size:12px;color:#555;">
+            <button class="link" onclick="showAdminLogin()" style="font-size:12px;color:#666;text-decoration:underline;">🔐 Admin Access</button>
+        </p>
     </div>
 </div>
 
-<!-- ==================== REGISTER ==================== -->
 <div id="register-screen" class="auth-screen hidden">
     <div class="auth-box">
         <div class="logo">📈</div>
@@ -665,10 +219,12 @@
         <input type="password" id="reg-pass2" placeholder="Confirm Password">
         <button class="btn-primary" id="register-btn" onclick="startRegistration()">Create Account</button>
         <p class="toggle-text">Have account? <button class="link" onclick="showLogin()">Login</button></p>
+        <p style="margin-top:12px;font-size:12px;color:#555;">
+            <button class="link" onclick="showAdminLogin()" style="font-size:12px;color:#666;text-decoration:underline;">🔐 Admin Access</button>
+        </p>
     </div>
 </div>
 
-<!-- ==================== OTP VERIFICATION ==================== -->
 <div id="otp-screen" class="auth-screen hidden">
     <div class="auth-box">
         <div style="font-size:48px;margin-bottom:12px;">🔐</div>
@@ -682,7 +238,6 @@
     </div>
 </div>
 
-<!-- ==================== ADMIN LOGIN ==================== -->
 <div id="admin-login-screen" class="auth-screen hidden">
     <div class="auth-box">
         <div style="font-size:48px;margin-bottom:12px;">🔐</div>
@@ -694,7 +249,6 @@
     </div>
 </div>
 
-<!-- ==================== USER DASHBOARD ==================== -->
 <div id="user-dashboard" class="hidden">
     <div class="header">
         <div class="logo">
@@ -739,6 +293,13 @@
                 <div class="stat-label">Referral Earnings</div>
             </div>
         </div>
+
+        <!-- FEATURE 3: ACTIVE INVESTMENTS COUNTDOWN -->
+        <div style="margin-top:24px;" id="active-investments-section" class="hidden">
+            <div class="section-title">⏱️ Active Investments</div>
+            <div id="active-investments-list"></div>
+        </div>
+
         <div style="margin-top:24px;">
             <div class="section-title">📋 Recent Transactions</div>
             <div id="transactions-list">
@@ -772,6 +333,16 @@
             <button onclick="openDeposit()" style="width:100%;padding:16px;background:#22c55e;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;">📥 Deposit</button>
             <button onclick="openWithdraw()" style="width:100%;padding:16px;background:#ef4444;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:700;cursor:pointer;">📤 Withdraw</button>
         </div>
+
+        <!-- FEATURE 2: DEPOSIT CHAT TRIGGER -->
+        <div class="deposit-chat-trigger" id="deposit-chat-trigger">
+            <div class="chat-icon">💬</div>
+            <p>Need help with your deposit?</p>
+            <button class="deposit-chat-btn" onclick="openUserChat()">
+                <span>💬</span> Tap here to chat with admin
+            </button>
+        </div>
+
         <div style="margin-top:24px;">
             <div class="section-title">🕐 Withdrawal History</div>
             <div id="withdrawal-list">
@@ -854,20 +425,27 @@
         </div>
     </div>
 
-    <button class="robot-btn" onclick="toggleChat()" title="AI Assistant">🤖</button>
+    <!-- FEATURE 1: USER CHAT BUTTON -->
+    <button class="user-chat-btn" id="user-chat-btn" onclick="openUserChat()" title="Chat with Admin">
+        💬
+        <span class="unread-dot hidden" id="user-unread-dot">0</span>
+    </button>
 
-    <div class="chat-panel" id="chat-panel">
+    <!-- FEATURE 1: USER CHAT PANEL -->
+    <div class="chat-panel" id="user-chat-panel">
         <div class="chat-header">
-            <div class="robot-avatar">🤖</div>
-            <h3>UnionVest Assistant</h3>
-            <button class="close-chat" onclick="toggleChat()">✕</button>
+            <div class="robot-avatar">👤</div>
+            <h3>Admin Support</h3>
+            <button class="close-chat" onclick="closeUserChat()">✕</button>
         </div>
-        <div class="chat-body" id="chat-body">
-            <div class="chat-msg bot">Hello! I'm your UnionVest assistant. How can I help you today?</div>
+        <div class="chat-body" id="user-chat-body">
+            <div class="chat-msg bot">Hello! I'm here to help. How can I assist you today?</div>
         </div>
         <div class="chat-input-area">
-            <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChat()">
-            <button class="btn-primary" style="padding:10px 14px;" onclick="sendChat()">Send</button>
+            <input type="file" id="user-chat-image" accept="image/*" style="display:none;" onchange="handleUserImageUpload(event)">
+            <button class="attach-btn" onclick="document.getElementById('user-chat-image').click()">📎</button>
+            <input type="text" id="user-chat-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendUserChat()">
+            <button class="btn-primary" style="padding:10px 14px;" onclick="sendUserChat()">Send</button>
         </div>
     </div>
 
@@ -887,7 +465,6 @@
     </div>
 </div>
 
-<!-- ==================== ADMIN DASHBOARD ==================== -->
 <div id="admin-dashboard" class="hidden">
     <div class="admin-header">
         <h1>🔐 UnionVest Admin</h1>
@@ -943,10 +520,35 @@
                 </table>
             </div>
         </div>
+
+        <!-- FEATURE 1: ADMIN CHAT SECTION -->
+        <div class="section-admin admin-chat-section">
+            <h2>💬 User Messages</h2>
+            <div class="admin-chat-user-list" id="admin-chat-user-list">
+                <div class="empty">No messages yet.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEATURE 1: ADMIN CHAT WINDOW -->
+    <div class="admin-chat-window" id="admin-chat-window">
+        <div class="admin-chat-header">
+            <button class="back-btn" onclick="closeAdminChat()">←</button>
+            <div class="robot-avatar" style="width:32px;height:32px;font-size:16px;">👤</div>
+            <h3 id="admin-chat-user-name">User</h3>
+            <span class="unread-badge" id="admin-chat-unread" style="display:none;">0</span>
+            <button class="close-chat" onclick="closeAdminChat()">✕</button>
+        </div>
+        <div class="chat-body" id="admin-chat-body"></div>
+        <div class="admin-chat-input-area">
+            <input type="file" id="admin-chat-image" accept="image/*" style="display:none;" onchange="handleAdminImageUpload(event)">
+            <button class="attach-btn" onclick="document.getElementById('admin-chat-image').click()">📎</button>
+            <input type="text" id="admin-chat-input" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendAdminReply()">
+            <button class="btn-primary" style="padding:10px 14px;" onclick="sendAdminReply()">Send</button>
+        </div>
     </div>
 </div>
 
-<!-- ==================== MODALS ==================== -->
 <div class="popup-overlay" id="deposit-modal">
     <div class="popup">
         <div style="font-size:48px;margin-bottom:12px;">💳</div>
@@ -966,7 +568,7 @@
                 <div class="value" style="font-size:11px;">TJs7fKxK1vLk7X5yZ9pQmN2rT3wUvXyZaB</div>
             </div>
         </div>
-        <button class="popup-btn" onclick="closeModal('deposit-modal')">Got It</button>
+        <button class="popup-btn" onclick="closeDepositModal()">Got It</button>
     </div>
 </div>
 
@@ -1003,40 +605,25 @@ const firebaseConfig = {
     measurementId: "G-Q4VL3SF3R0"
 };
 
-// Initialize Firebase
-let app = null;
-let auth = null;
-let db = null;
-let firebaseInitialized = false;
-
+let app = null, auth = null, db = null, firebaseInitialized = false;
 try {
     app = firebase.initializeApp(firebaseConfig);
     auth = firebase.auth();
     db = firebase.firestore();
     firebaseInitialized = true;
     console.log("Firebase initialized successfully");
-} catch(e) {
-    console.error("Firebase init error:", e);
-}
+} catch(e) { console.error("Firebase init error:", e); }
 
-// ===================== EMAILJS CONFIG =====================
-// Initialize EmailJS with your public key
-// Replace with your actual EmailJS public key after signing up at emailjs.com
 const EMAILJS_PUBLIC_KEY = "YOUR_EMAILJS_PUBLIC_KEY";
 const EMAILJS_SERVICE_ID = "YOUR_EMAILJS_SERVICE_ID";
 const EMAILJS_TEMPLATE_ID = "YOUR_EMAILJS_TEMPLATE_ID";
-
-// Initialize EmailJS
 try {
     if (EMAILJS_PUBLIC_KEY !== "YOUR_EMAILJS_PUBLIC_KEY") {
         emailjs.init(EMAILJS_PUBLIC_KEY);
         console.log("EmailJS initialized");
     }
-} catch(e) {
-    console.error("EmailJS init error:", e);
-}
+} catch(e) { console.error("EmailJS init error:", e); }
 
-// ===================== CONFIG =====================
 const ADMIN_PASS = 'admin123';
 const OTP_EXPIRY_MINUTES = 10;
 const plans = [
@@ -1046,13 +633,9 @@ const plans = [
     { name: 'Elite', rate: 18, days: 60, min: 25000, max: 100000, color: '#a855f7' }
 ];
 
-// ===================== STATE =====================
-let currentUser = null;
-let pendingRegData = null;
-let otpTimerInterval = null;
-let otpExpiryTime = null;
+let currentUser = null, pendingRegData = null, otpTimerInterval = null, otpExpiryTime = null;
+let countdownIntervals = {}, adminSelectedUser = null;
 
-// ===================== TOAST =====================
 function showToast(icon, text, duration) {
     duration = duration || 3000;
     const toast = document.getElementById('toast');
@@ -1062,23 +645,10 @@ function showToast(icon, text, duration) {
     setTimeout(function() { toast.classList.remove('show'); }, duration);
 }
 
-// ===================== AUTH NAVIGATION =====================
-function showLogin() {
-    hideAllScreens();
-    document.getElementById('login-screen').classList.remove('hidden');
-}
-function showRegister() {
-    hideAllScreens();
-    document.getElementById('register-screen').classList.remove('hidden');
-}
-function showOTP() {
-    hideAllScreens();
-    document.getElementById('otp-screen').classList.remove('hidden');
-}
-function showAdminLogin() {
-    hideAllScreens();
-    document.getElementById('admin-login-screen').classList.remove('hidden');
-}
+function showLogin() { hideAllScreens(); document.getElementById('login-screen').classList.remove('hidden'); }
+function showRegister() { hideAllScreens(); document.getElementById('register-screen').classList.remove('hidden'); }
+function showOTP() { hideAllScreens(); document.getElementById('otp-screen').classList.remove('hidden'); }
+function showAdminLogin() { hideAllScreens(); document.getElementById('admin-login-screen').classList.remove('hidden'); }
 function hideAllScreens() {
     document.getElementById('login-screen').classList.add('hidden');
     document.getElementById('register-screen').classList.add('hidden');
@@ -1088,19 +658,14 @@ function hideAllScreens() {
     document.getElementById('admin-dashboard').classList.add('hidden');
 }
 
-// ===================== OTP SYSTEM =====================
-function generateOTP() {
-    return Math.floor(10000 + Math.random() * 90000).toString();
-}
+function generateOTP() { return Math.floor(10000 + Math.random() * 90000).toString(); }
 
 function startOTPCountdown() {
     otpExpiryTime = Date.now() + (OTP_EXPIRY_MINUTES * 60 * 1000);
     const timerEl = document.getElementById('otp-timer');
     const resendBtn = document.getElementById('resend-btn');
     resendBtn.disabled = true;
-    
     if (otpTimerInterval) clearInterval(otpTimerInterval);
-    
     otpTimerInterval = setInterval(function() {
         const remaining = otpExpiryTime - Date.now();
         if (remaining <= 0) {
@@ -1120,15 +685,8 @@ function startOTPCountdown() {
 }
 
 function sendOTPEmail(email, name, otp) {
-    // Try EmailJS first if configured
     if (EMAILJS_PUBLIC_KEY !== "YOUR_EMAILJS_PUBLIC_KEY") {
-        const templateParams = {
-            to_email: email,
-            user_name: name,
-            otp: otp,
-            expiry_min: OTP_EXPIRY_MINUTES
-        };
-        
+        const templateParams = { to_email: email, user_name: name, otp: otp, expiry_min: OTP_EXPIRY_MINUTES };
         emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams)
             .then(function(response) {
                 console.log('EmailJS OTP sent:', response);
@@ -1139,7 +697,6 @@ function sendOTPEmail(email, name, otp) {
                 showToast('📧', 'OTP: ' + otp + ' (EmailJS failed, check console)', 5000);
             });
     } else {
-        // Fallback: show OTP on screen for demo
         console.log('DEMO OTP for ' + email + ': ' + otp);
         showToast('📧', 'Demo mode - OTP: ' + otp, 5000);
     }
@@ -1150,12 +707,9 @@ function startRegistration() {
     const email = document.getElementById('reg-email').value.trim();
     const pass = document.getElementById('reg-pass').value;
     const pass2 = document.getElementById('reg-pass2').value;
-    
     if (!name || !email || !pass) { alert('Fill all fields'); return; }
     if (pass !== pass2) { alert('Passwords do not match'); return; }
     if (pass.length < 6) { alert('Password must be at least 6 characters'); return; }
-    
-    // Check if email already exists in localStorage
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('uvc_user_')) {
@@ -1165,15 +719,9 @@ function startRegistration() {
             } catch(e) {}
         }
     }
-    
-    // Generate OTP
     const otp = generateOTP();
     pendingRegData = { name: name, email: email, password: pass, otp: otp, createdAt: Date.now() };
-    
-    // Send OTP via EmailJS
     sendOTPEmail(email, name, otp);
-    
-    // Show OTP screen
     document.getElementById('otp-email-display').textContent = email;
     document.getElementById('otp-input').value = '';
     showOTP();
@@ -1184,25 +732,18 @@ function verifyOTP() {
     const input = document.getElementById('otp-input').value.trim();
     if (!input || input.length !== 5) { alert('Enter the 5-digit code'); return; }
     if (!pendingRegData) { alert('OTP expired. Please register again.'); showRegister(); return; }
-    
     if (input === pendingRegData.otp) {
-        // OTP correct - create account
         clearInterval(otpTimerInterval);
         completeRegistration();
-    } else {
-        alert('Invalid OTP. Please try again.');
-    }
+    } else { alert('Invalid OTP. Please try again.'); }
 }
 
 function resendOTP() {
     if (!pendingRegData) { alert('Session expired. Please register again.'); showRegister(); return; }
-    
     const otp = generateOTP();
     pendingRegData.otp = otp;
     pendingRegData.createdAt = Date.now();
-    
     sendOTPEmail(pendingRegData.email, pendingRegData.name, otp);
-    
     document.getElementById('otp-input').value = '';
     startOTPCountdown();
 }
@@ -1215,70 +756,58 @@ function cancelRegistration() {
 
 function completeRegistration() {
     if (!pendingRegData) return;
-    
     const userId = 'user_' + Math.random().toString(36).substr(2, 9);
     const user = {
-        id: userId,
-        name: pendingRegData.name,
-        email: pendingRegData.email,
-        password: pendingRegData.password,
-        balance: 0,
-        activeInvestments: 0,
-        dailyROI: 0,
-        referralEarnings: 0,
-        transactions: [],
-        withdrawals: [],
-        bankDetails: null,
-        cryptoWallets: [],
-        plan: null,
-        emailVerified: true,
-        createdAt: new Date().toISOString()
+        id: userId, name: pendingRegData.name, email: pendingRegData.email,
+        password: pendingRegData.password, balance: 0, activeInvestments: 0,
+        dailyROI: 0, referralEarnings: 0, transactions: [], withdrawals: [],
+        bankDetails: null, cryptoWallets: [], plan: null, investments: [],
+        emailVerified: true, createdAt: new Date().toISOString()
     };
-    
     localStorage.setItem('uvc_user_' + userId, JSON.stringify(user));
     localStorage.setItem('uvc_current_user', userId);
-    
-    // Send welcome email
     sendEmailNotification(pendingRegData.email, 'Welcome to UnionVest Capital!', 
-        'Hi ' + pendingRegData.name + ',\n\nYour account has been successfully created.\nYour User ID: ' + userId + '\n\nStart investing today!');
-    
+        'Hi ' + pendingRegData.name + ',
+
+Your account has been successfully created.
+Your User ID: ' + userId + '
+
+Start investing today!');
     pendingRegData = null;
-    alert('Account verified successfully! Your User ID: ' + userId + '\n\nSave this ID! Give it to admin when depositing.');
+    alert('Account verified successfully! Your User ID: ' + userId + '
+
+Save this ID! Give it to admin when depositing.');
     enterDashboard();
 }
 
-// ===================== EMAIL NOTIFICATION SYSTEM =====================
 function sendEmailNotification(toEmail, subject, body) {
     console.log('EMAIL NOTIFICATION:');
     console.log('To: ' + toEmail);
     console.log('Subject: ' + subject);
     console.log('Body: ' + body);
-    
     const notifications = JSON.parse(localStorage.getItem('uvc_notifications') || '[]');
-    notifications.push({
-        to: toEmail,
-        subject: subject,
-        body: body,
-        sentAt: new Date().toISOString(),
-        status: 'queued'
-    });
+    notifications.push({ to: toEmail, subject: subject, body: body, sentAt: new Date().toISOString(), status: 'queued' });
     localStorage.setItem('uvc_notifications', JSON.stringify(notifications));
-    
     showToast('📧', 'Email notification queued for ' + toEmail, 3000);
 }
 
 function sendDepositConfirmedEmail(userEmail, userName, amount) {
     const subject = 'Deposit Confirmed - UnionVest Capital';
-    const body = 'Hi ' + userName + ',\n\nGreat news! Your deposit of $' + amount.toLocaleString() + ' has been confirmed.\n\nYour balance has been updated. Start investing now!\n\nThank you,\nUnionVest Capital Team';
+    const body = 'Hi ' + userName + ',
+
+Great news! Your deposit of $' + amount.toLocaleString() + ' has been confirmed.
+
+Your balance has been updated. Start investing now!
+
+Thank you,
+UnionVest Capital Team';
     sendEmailNotification(userEmail, subject, body);
 }
 
-// ===================== LOGIN / LOGOUT =====================
 function doLogin() {
     const email = document.getElementById('login-email').value.trim();
     const pass = document.getElementById('login-pass').value;
     if (!email || !pass) { alert('Enter email and password'); return; }
-    
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('uvc_user_')) {
@@ -1298,6 +827,8 @@ function doLogin() {
 function doLogout() {
     localStorage.removeItem('uvc_current_user');
     currentUser = null;
+    Object.values(countdownIntervals).forEach(function(iv) { clearInterval(iv); });
+    countdownIntervals = {};
     showLogin();
 }
 
@@ -1321,15 +852,16 @@ function saveUser(user) {
     localStorage.setItem('uvc_user_' + user.id, JSON.stringify(user));
 }
 
-// ===================== DASHBOARD =====================
 function initDashboard() {
     if (!currentUser) return;
-    document.getElementById('welcome-text').textContent = 'Welcome back, ' + (currentUser.name || 'User') + '. Here\'s your portfolio overview.';
+    document.getElementById('welcome-text').textContent = 'Welcome back, ' + (currentUser.name || 'User') + '. Here's your portfolio overview.';
     document.getElementById('display-user-id').textContent = currentUser.id;
     checkAdminConfirmation();
     renderAll();
     renderPlans();
     updateWithdrawMethods();
+    renderActiveInvestmentsCountdown();
+    updateUserUnreadCount();
 }
 
 function renderAll() {
@@ -1341,16 +873,12 @@ function renderAll() {
     document.getElementById('referral-earnings').textContent = '$' + formatMoney(currentUser.referralEarnings || 0);
     document.getElementById('ref-earnings').textContent = '$' + formatMoney(currentUser.referralEarnings || 0);
     document.getElementById('ref-link').textContent = 'https://unionvest.capital/ref/' + currentUser.id;
-
-    const bal = currentUser.balance || 0;
-    const inv = currentUser.activeInvestments || 0;
-    const roi = currentUser.dailyROI || 0;
-    const ref = currentUser.referralEarnings || 0;
+    const bal = currentUser.balance || 0, inv = currentUser.activeInvestments || 0;
+    const roi = currentUser.dailyROI || 0, ref = currentUser.referralEarnings || 0;
     document.getElementById('total-balance').className = 'stat-amount' + (bal > 0 ? '' : ' zero-balance');
     document.getElementById('active-investments').className = 'stat-amount' + (inv > 0 ? '' : ' zero-balance');
     document.getElementById('daily-roi').className = 'stat-amount' + (roi > 0 ? '' : ' zero-balance');
     document.getElementById('referral-earnings').className = 'stat-amount' + (ref > 0 ? '' : ' zero-balance');
-
     renderTransactions();
     renderWithdrawals();
     renderAccountDetails();
@@ -1360,7 +888,6 @@ function formatMoney(n) {
     return (n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-// ===================== TABS =====================
 function showTab(tab) {
     ['dashboard','investments','wallet','referrals','account'].forEach(function(t) {
         const el = document.getElementById(t + '-tab');
@@ -1376,7 +903,6 @@ function showTab(tab) {
     });
 }
 
-// ===================== TRANSACTIONS =====================
 function renderTransactions() {
     const list = document.getElementById('transactions-list');
     const txs = currentUser.transactions || [];
@@ -1392,11 +918,10 @@ function renderTransactions() {
     }).join('');
 }
 
-// ===================== PLANS =====================
 function renderPlans() {
     const list = document.getElementById('plans-list');
     list.innerHTML = plans.map(function(p) {
-        return '<div class="plan-card"><div class="plan-header"><h2>' + p.name + '</h2><span class="plan-rate" style="color:' + p.color + ';">' + p.rate + '%</span></div><div class="plan-amount" style="color:' + p.color + ';">' + p.rate + '%</div><div class="plan-days">' + p.days + ' Days</div><div class="plan-range">$' + p.min.toLocaleString() + ' - $' + p.max.toLocaleString() + '</div><button onclick="investInPlan(\'' + p.name + '\',' + p.rate + ',' + p.days + ',' + p.min + ',' + p.max + ')" class="btn-primary">Invest Now</button></div>';
+        return '<div class="plan-card"><div class="plan-header"><h2>' + p.name + '</h2><span class="plan-rate" style="color:' + p.color + ';">' + p.rate + '%</span></div><div class="plan-amount" style="color:' + p.color + ';">' + p.rate + '%</div><div class="plan-days">' + p.days + ' Days</div><div class="plan-range">$' + p.min.toLocaleString() + ' - $' + p.max.toLocaleString() + '</div><button onclick="investInPlan('' + p.name + '',' + p.rate + ',' + p.days + ',' + p.min + ',' + p.max + ')" class="btn-primary">Invest Now</button></div>';
     }).join('');
 }
 
@@ -1410,7 +935,14 @@ function investInPlan(name, rate, days, min, max) {
     currentUser.balance = bal - amt;
     currentUser.activeInvestments = (currentUser.activeInvestments || 0) + amt;
     currentUser.dailyROI = (amt * rate / 100) / days;
-    currentUser.plan = { name: name, rate: rate, days: days, amount: amt, startDate: new Date().toISOString() };
+    const investment = {
+        name: name, rate: rate, days: days, amount: amt,
+        startDate: new Date().toISOString(),
+        endDate: new Date(Date.now() + days * 24 * 60 * 60 * 1000).toISOString()
+    };
+    currentUser.plan = investment;
+    currentUser.investments = currentUser.investments || [];
+    currentUser.investments.push(investment);
     currentUser.transactions = currentUser.transactions || [];
     currentUser.transactions.push({
         type: 'investment', icon: '📊', title: name + ' Plan', desc: days + ' days',
@@ -1418,12 +950,76 @@ function investInPlan(name, rate, days, min, max) {
     });
     saveUser(currentUser);
     renderAll();
+    renderActiveInvestmentsCountdown();
     alert('Investment successful! Your plan is now active.');
 }
 
+// ===================== FEATURE 3: INVESTMENT COUNTDOWN TIMER =====================
+function renderActiveInvestmentsCountdown() {
+    const section = document.getElementById('active-investments-section');
+    const list = document.getElementById('active-investments-list');
+    Object.values(countdownIntervals).forEach(function(iv) { clearInterval(iv); });
+    countdownIntervals = {};
+    const investments = currentUser.investments || [];
+    const activeInvestments = investments.filter(function(inv) {
+        return new Date(inv.endDate) > new Date();
+    });
+    if (activeInvestments.length === 0) {
+        section.classList.add('hidden');
+        return;
+    }
+    section.classList.remove('hidden');
+    list.innerHTML = activeInvestments.map(function(inv, idx) {
+        const totalDays = inv.days;
+        const startTime = new Date(inv.startDate).getTime();
+        const endTime = new Date(inv.endDate).getTime();
+        const now = Date.now();
+        const elapsed = now - startTime;
+        const totalDuration = endTime - startTime;
+        const progress = Math.min(100, (elapsed / totalDuration) * 100);
+        const remaining = Math.max(0, endTime - now);
+        return '<div class="investment-card" id="investment-' + idx + '"><div class="invest-header"><div class="invest-name">' + inv.name + ' Plan</div><div class="invest-amount" style="color:' + plans.find(function(p){return p.name===inv.name;}).color + ';">$' + inv.amount.toLocaleString() + '</div></div><div class="invest-details"><div class="invest-detail"><div class="label">Rate</div><div class="value">' + inv.rate + '%</div></div><div class="invest-detail"><div class="label">Total Days</div><div class="value">' + inv.days + '</div></div><div class="invest-detail"><div class="label">Daily ROI</div><div class="value">$' + ((inv.amount * inv.rate / 100) / inv.days).toFixed(2) + '</div></div></div><div class="countdown-timer"><div class="timer-label">⏱️ Time Remaining</div><div class="timer-display" id="timer-display-' + idx + '">' + formatCountdown(remaining) + '</div><div class="timer-bar"><div class="timer-bar-fill" id="timer-bar-' + idx + '" style="width:' + (100 - progress) + '%;"></div></div></div></div>';
+    }).join('');
+    activeInvestments.forEach(function(inv, idx) {
+        const endTime = new Date(inv.endDate).getTime();
+        const intervalId = setInterval(function() {
+            const remaining = Math.max(0, endTime - Date.now());
+            const display = document.getElementById('timer-display-' + idx);
+            const bar = document.getElementById('timer-bar-' + idx);
+            if (display) display.textContent = formatCountdown(remaining);
+            if (bar) {
+                const startTime = new Date(inv.startDate).getTime();
+                const totalDuration = endTime - startTime;
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(100, (elapsed / totalDuration) * 100);
+                bar.style.width = (100 - progress) + '%';
+            }
+            if (remaining <= 0) {
+                clearInterval(intervalId);
+                renderActiveInvestmentsCountdown();
+            }
+        }, 1000);
+        countdownIntervals[idx] = intervalId;
+    });
+}
+
+function formatCountdown(ms) {
+    if (ms <= 0) return 'Completed!';
+    const days = Math.floor(ms / (24 * 60 * 60 * 1000));
+    const hours = Math.floor((ms % (24 * 60 * 60 * 1000)) / (60 * 60 * 1000));
+    const minutes = Math.floor((ms % (60 * 60 * 1000)) / (60 * 1000));
+    const seconds = Math.floor((ms % (60 * 1000)) / 1000);
+    return days + 'd ' + pad(hours) + 'h ' + pad(minutes) + 'm ' + pad(seconds) + 's';
+}
+function pad(n) { return n < 10 ? '0' + n : n; }
+
 // ===================== WALLET =====================
-function openDeposit() { 
-    document.getElementById('deposit-modal').classList.add('show'); 
+function openDeposit() {
+    document.getElementById('deposit-modal').classList.add('show');
+    document.getElementById('deposit-chat-trigger').classList.add('show');
+}
+function closeDepositModal() {
+    document.getElementById('deposit-modal').classList.remove('show');
 }
 function openWithdraw() {
     if ((currentUser.balance || 0) <= 0) { alert('You have no balance to withdraw.'); return; }
@@ -1532,9 +1128,7 @@ function checkAdminConfirmation() {
                     amount: data.amount, date: new Date().toLocaleDateString()
                 });
                 saveUser(currentUser);
-                
                 sendDepositConfirmedEmail(currentUser.email, currentUser.name, data.amount);
-                
                 document.getElementById('congrats-message').textContent =
                     'Your deposit of $' + formatMoney(data.amount) + ' has been confirmed by admin. Your balance has been updated!';
                 document.getElementById('congrats-popup').classList.add('show');
@@ -1553,41 +1147,160 @@ function markCongratsSeen() {
     renderAll();
 }
 
-// ===================== CHAT BOT =====================
-function toggleChat() {
-    document.getElementById('chat-panel').classList.toggle('show');
+// ===================== FEATURE 1: USER CHAT SYSTEM =====================
+function openUserChat() {
+    document.getElementById('user-chat-panel').classList.add('show');
+    renderUserChat();
+    const messages = getChatMessages(currentUser.id);
+    messages.forEach(function(msg) {
+        if (msg.from === 'admin' && !msg.read) msg.read = true;
+    });
+    saveChatMessages(currentUser.id, messages);
+    updateUserUnreadCount();
 }
-function sendChat() {
-    const input = document.getElementById('chat-input');
+function closeUserChat() {
+    document.getElementById('user-chat-panel').classList.remove('show');
+}
+function sendUserChat() {
+    const input = document.getElementById('user-chat-input');
     const msg = input.value.trim();
     if (!msg) return;
-    const body = document.getElementById('chat-body');
-    body.innerHTML += '<div class="chat-msg user">' + escapeHtml(msg) + '</div>';
+    const messages = getChatMessages(currentUser.id);
+    messages.push({ from: 'user', text: msg, time: new Date().toISOString(), read: false });
+    saveChatMessages(currentUser.id, messages);
     input.value = '';
+    renderUserChat();
+    showToast('💬', 'Message sent to admin', 2000);
+}
+function handleUserImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const messages = getChatMessages(currentUser.id);
+        messages.push({ from: 'user', image: e.target.result, time: new Date().toISOString(), read: false });
+        saveChatMessages(currentUser.id, messages);
+        renderUserChat();
+        showToast('📷', 'Image sent to admin', 2000);
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+}
+function renderUserChat() {
+    const body = document.getElementById('user-chat-body');
+    const messages = getChatMessages(currentUser.id);
+    if (messages.length === 0) {
+        body.innerHTML = '<div class="chat-msg bot">Hello! I'm here to help. How can I assist you today?</div>';
+        return;
+    }
+    body.innerHTML = messages.map(function(msg) {
+        const time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (msg.image) {
+            return '<div class="chat-msg ' + (msg.from === 'user' ? 'user' : 'bot') + '"><img src="' + msg.image + '" alt="Image"><span class="msg-time">' + time + '</span></div>';
+        }
+        return '<div class="chat-msg ' + (msg.from === 'user' ? 'user' : 'bot') + '">' + escapeHtml(msg.text) + '<span class="msg-time">' + time + '</span></div>';
+    }).join('');
     body.scrollTop = body.scrollHeight;
-    setTimeout(function() {
-        const reply = getBotReply(msg);
-        body.innerHTML += '<div class="chat-msg bot">' + reply + '</div>';
-        body.scrollTop = body.scrollHeight;
-    }, 600);
 }
-function getBotReply(msg) {
-    const lower = msg.toLowerCase();
-    if (lower.indexOf('deposit') !== -1) return 'To deposit, go to Wallet → Deposit and send funds to the provided address. Then contact admin with your User ID.';
-    if (lower.indexOf('withdraw') !== -1) return 'To withdraw, go to Wallet → Withdraw. Make sure you have added your bank or crypto details in Account first.';
-    if (lower.indexOf('invest') !== -1) return 'Go to the Invest tab and choose a plan: Starter (5%), Growth (8%), Premium (12%), or Elite (18%).';
-    if (lower.indexOf('referral') !== -1) return 'Share your referral link from the Referrals tab. You earn 10% lifetime commission!';
-    if (lower.indexOf('balance') !== -1) return 'Your balance is shown on the Dashboard and Wallet tabs.';
-    if (lower.indexOf('hello') !== -1 || lower.indexOf('hi') !== -1) return 'Hello! How can I assist you with UnionVest Capital today?';
-    return "I'm here to help! Ask me about deposits, withdrawals, investments, or referrals.";
+function getChatMessages(userId) {
+    const key = 'uvc_chat_' + userId;
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : [];
 }
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
+function saveChatMessages(userId, messages) {
+    localStorage.setItem('uvc_chat_' + userId, JSON.stringify(messages));
+}
+function updateUserUnreadCount() {
+    if (!currentUser) return;
+    const messages = getChatMessages(currentUser.id);
+    const unread = messages.filter(function(m) { return m.from === 'admin' && !m.read; }).length;
+    const dot = document.getElementById('user-unread-dot');
+    if (unread > 0) {
+        dot.textContent = unread > 9 ? '9+' : unread;
+        dot.classList.remove('hidden');
+    } else {
+        dot.classList.add('hidden');
+    }
 }
 
-// ===================== UTILS =====================
+// ===================== FEATURE 1: ADMIN CHAT FUNCTIONS =====================
+function loadAdminChatList() {
+    const list = document.getElementById('admin-chat-user-list');
+    const users = getAllUsers();
+    if (users.length === 0) {
+        list.innerHTML = '<div class="empty">No users yet.</div>';
+        return;
+    }
+    list.innerHTML = users.map(function(u) {
+        const messages = getChatMessages(u.id);
+        const unread = messages.filter(function(m) { return m.from === 'user' && !m.read; }).length;
+        const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
+        const lastText = lastMsg ? (lastMsg.image ? '📷 Image' : lastMsg.text.substring(0, 30) + (lastMsg.text.length > 30 ? '...' : '')) : 'No messages yet';
+        return '<div class="admin-chat-user-item" onclick="openAdminChat('' + u.id + '', '' + (u.name || 'User') + '')"><div class="robot-avatar" style="width:36px;height:36px;font-size:18px;">👤</div><div style="flex:1;min-width:0;"><div style="font-weight:600;font-size:14px;">' + (u.name || 'User') + ' <span style="color:#555;font-size:11px;">(' + u.id + ')</span></div><div style="font-size:12px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + lastText + '</div></div>' + (unread > 0 ? '<span class="unread-badge">' + unread + '</span>' : '') + '</div>';
+    }).join('');
+}
+function openAdminChat(userId, userName) {
+    adminSelectedUser = userId;
+    document.getElementById('admin-chat-user-name').textContent = userName;
+    document.getElementById('admin-chat-window').classList.add('show');
+    renderAdminChat();
+    const messages = getChatMessages(userId);
+    let changed = false;
+    messages.forEach(function(msg) {
+        if (msg.from === 'user' && !msg.read) { msg.read = true; changed = true; }
+    });
+    if (changed) {
+        saveChatMessages(userId, messages);
+        loadAdminChatList();
+    }
+}
+function closeAdminChat() {
+    document.getElementById('admin-chat-window').classList.remove('show');
+    adminSelectedUser = null;
+}
+function sendAdminReply() {
+    if (!adminSelectedUser) return;
+    const input = document.getElementById('admin-chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+    const messages = getChatMessages(adminSelectedUser);
+    messages.push({ from: 'admin', text: msg, time: new Date().toISOString(), read: false });
+    saveChatMessages(adminSelectedUser, messages);
+    input.value = '';
+    renderAdminChat();
+}
+function handleAdminImageUpload(event) {
+    if (!adminSelectedUser) return;
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const messages = getChatMessages(adminSelectedUser);
+        messages.push({ from: 'admin', image: e.target.result, time: new Date().toISOString(), read: false });
+        saveChatMessages(adminSelectedUser, messages);
+        renderAdminChat();
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+}
+function renderAdminChat() {
+    if (!adminSelectedUser) return;
+    const body = document.getElementById('admin-chat-body');
+    const messages = getChatMessages(adminSelectedUser);
+    if (messages.length === 0) {
+        body.innerHTML = '<div class="chat-msg bot">No messages yet.</div>';
+        return;
+    }
+    body.innerHTML = messages.map(function(msg) {
+        const time = new Date(msg.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        if (msg.image) {
+            return '<div class="chat-msg ' + (msg.from === 'admin' ? 'admin' : 'bot') + '"><img src="' + msg.image + '" alt="Image"><span class="msg-time">' + time + '</span></div>';
+        }
+        return '<div class="chat-msg ' + (msg.from === 'admin' ? 'admin' : 'bot') + '">' + escapeHtml(msg.text) + '<span class="msg-time">' + time + '</span></div>';
+    }).join('');
+    body.scrollTop = body.scrollHeight;
+}
+
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 function copyRef() {
     const text = document.getElementById('ref-link').textContent;
@@ -1600,6 +1313,11 @@ function copyRef() {
         alert('Referral link copied!');
     }
 }
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
 
 // ===================== ADMIN PANEL =====================
 function doAdminLogin() {
@@ -1608,13 +1326,16 @@ function doAdminLogin() {
         hideAllScreens();
         document.getElementById('admin-dashboard').classList.remove('hidden');
         loadAdminData();
-        setInterval(loadAdminData, 10000);
-    } else {
-        alert('Wrong password! Use: admin123');
-    }
+        loadAdminChatList();
+        setInterval(function() {
+            loadAdminData();
+            loadAdminChatList();
+        }, 5000);
+    } else { alert('Wrong password! Use: admin123'); }
 }
 function adminLogout() {
     document.getElementById('admin-pass').value = '';
+    adminSelectedUser = null;
     showLogin();
 }
 function getAllUsers() {
@@ -1630,20 +1351,15 @@ function getAllUsers() {
 }
 function loadAdminData() {
     const users = getAllUsers();
-    let totalVol = 0;
-    let allWds = [];
-    let activeInvestors = 0;
-    
+    let totalVol = 0, allWds = [], activeInvestors = 0;
     users.forEach(function(u) {
         if (u.transactions) u.transactions.forEach(function(t) { if (t.type === 'deposit' && t.amount > 0) totalVol += t.amount; });
         if (u.withdrawals) u.withdrawals.forEach(function(w) { allWds.push(Object.assign({}, w, {userId: u.id})); });
         if ((u.activeInvestments || 0) > 0) activeInvestors++;
     });
-    
     document.getElementById('admin-total-users').textContent = users.length;
     document.getElementById('admin-total-volume').textContent = '$' + totalVol.toLocaleString('en-US', {minimumFractionDigits: 2});
     document.getElementById('admin-active-investors').textContent = activeInvestors;
-
     let pendingDeps = 0;
     for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -1653,10 +1369,8 @@ function loadAdminData() {
         }
     }
     document.getElementById('admin-pending-deps').textContent = pendingDeps;
-
     const pendingWds = allWds.filter(function(w) { return w.status === 'pending'; });
     document.getElementById('admin-pending-wds').textContent = pendingWds.length;
-
     const usersDiv = document.getElementById('admin-users-list');
     if (users.length === 0) {
         usersDiv.innerHTML = '<div class="empty">No users registered yet.</div>';
@@ -1667,7 +1381,7 @@ function loadAdminData() {
             const planInfo = u.plan ? '<p>📈 Plan: ' + u.plan.name + ' (' + u.plan.rate + '%) | $' + u.plan.amount.toLocaleString() + '</p>' : '';
             const bankInfo = u.bankDetails ? '<p>🏦 Bank: ' + u.bankDetails.bankName + ' | ' + u.bankDetails.accountName + ' | ' + u.bankDetails.accountNumber + '</p>' : '';
             const cryptoInfo = u.cryptoWallets && u.cryptoWallets.length ? '<p>₿ Wallets: ' + u.cryptoWallets.map(function(w) { return w.type; }).join(', ') + '</p>' : '';
-            return '<div class="user-card"><h4>👤 ' + (u.name || 'User') + ' ' + activeBadge + ' <small style="color:#555;">(ID: <span class="copy-id" onclick="copyText(\'' + u.id + '\')">' + u.id + '</span>)</small></h4><p>💰 Balance: <strong style="color:var(--gold);">$' + ((u.balance || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + '</strong></p><p>📊 Active: $' + ((u.activeInvestments || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + ' | 📈 Daily ROI: $' + ((u.dailyROI || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + '</p><p>👥 Referral: $' + ((u.referralEarnings || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + '</p>' + planInfo + bankInfo + cryptoInfo + '</div>';
+            return '<div class="user-card"><h4>👤 ' + (u.name || 'User') + ' ' + activeBadge + ' <small style="color:#555;">(ID: <span class="copy-id" onclick="copyText('' + u.id + '')">' + u.id + '</span>)</small></h4><p>💰 Balance: <strong style="color:var(--gold);">$' + ((u.balance || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + '</strong></p><p>📊 Active: $' + ((u.activeInvestments || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + ' | 📈 Daily ROI: $' + ((u.dailyROI || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + '</p><p>👥 Referral: $' + ((u.referralEarnings || 0)).toLocaleString('en-US',{minimumFractionDigits:2}) + '</p>' + planInfo + bankInfo + cryptoInfo + '</div>';
         }).join('');
     }
     const wdTable = document.getElementById('admin-withdrawals-table');
@@ -1675,7 +1389,7 @@ function loadAdminData() {
         wdTable.innerHTML = '<tr><td colspan="5" class="empty">No pending withdrawals.</td></tr>';
     } else {
         wdTable.innerHTML = pendingWds.map(function(w) {
-            return '<tr><td><span class="copy-id" onclick="copyText(\'' + w.userId + '\')">' + w.userId + '</span></td><td style="color:var(--gold);font-weight:700;">$' + w.amount.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td><td>' + w.method + '</td><td>' + w.date + '</td><td><button class="btn-small btn-green" onclick="approveWD(\'' + w.userId + '\',\'' + w.id + '\')" style="margin-right:6px;">✅</button><button class="btn-small btn-red" onclick="rejectWD(\'' + w.userId + '\',\'' + w.id + '\')">❌</button></td></tr>';
+            return '<tr><td><span class="copy-id" onclick="copyText('' + w.userId + '')">' + w.userId + '</span></td><td style="color:var(--gold);font-weight:700;">$' + w.amount.toLocaleString('en-US',{minimumFractionDigits:2}) + '</td><td>' + w.method + '</td><td>' + w.date + '</td><td><button class="btn-small btn-green" onclick="approveWD('' + w.userId + '','' + w.id + '')" style="margin-right:6px;">✅</button><button class="btn-small btn-red" onclick="rejectWD('' + w.userId + '','' + w.id + '')">❌</button></td></tr>';
         }).join('');
     }
 }
@@ -1684,39 +1398,26 @@ function addBalance() {
     const userId = document.getElementById('target-user-id').value.trim();
     const amount = parseFloat(document.getElementById('add-amount').value);
     const type = document.getElementById('add-type').value;
-
-    if (!userId || !amount || amount <= 0) {
-        alert('Enter valid User ID and amount');
-        return;
-    }
-
+    if (!userId || !amount || amount <= 0) { alert('Enter valid User ID and amount'); return; }
     localStorage.setItem('uvc_pending_confirm_' + userId, JSON.stringify({
-        amount: amount,
-        type: type,
-        confirmed: true,
-        seen: false,
-        date: new Date().toISOString()
+        amount: amount, type: type, confirmed: true, seen: false, date: new Date().toISOString()
     }));
-
     const users = getAllUsers();
     const user = users.find(function(u) { return u.id === userId; });
     if (user) {
         user.balance = (user.balance || 0) + amount;
         user.transactions = user.transactions || [];
         user.transactions.push({
-            type: 'deposit',
-            icon: '💰',
+            type: 'deposit', icon: '💰',
             title: type === 'bonus' ? 'Admin Bonus' : type === 'referral' ? 'Referral Bonus' : 'Deposit Confirmed',
-            desc: 'Added by admin',
-            amount: amount,
-            date: new Date().toLocaleDateString()
+            desc: 'Added by admin', amount: amount, date: new Date().toLocaleDateString()
         });
         localStorage.setItem('uvc_user_' + userId, JSON.stringify(user));
-        
         sendDepositConfirmedEmail(user.email, user.name, amount);
     }
+    alert('✅ $' + amount.toLocaleString() + ' added to ' + userId + '!
 
-    alert('✅ $' + amount.toLocaleString() + ' added to ' + userId + '!\n\nUser will see 🎉 popup on dashboard. Email sent.');
+User will see 🎉 popup on dashboard. Email sent.');
     document.getElementById('target-user-id').value = '';
     document.getElementById('add-amount').value = '';
     loadAdminData();
@@ -1737,12 +1438,8 @@ function rejectWD(userId, wdId) {
         if (wd) {
             user.balance = (user.balance || 0) + wd.amount;
             user.transactions.push({
-                type: 'deposit',
-                icon: '↩️',
-                title: 'Withdrawal Refunded',
-                desc: 'Rejected by admin',
-                amount: wd.amount,
-                date: new Date().toLocaleDateString()
+                type: 'deposit', icon: '↩️', title: 'Withdrawal Refunded', desc: 'Rejected by admin',
+                amount: wd.amount, date: new Date().toLocaleDateString()
             });
             localStorage.setItem(key, JSON.stringify(user));
         }
@@ -1765,11 +1462,15 @@ function copyText(text) {
 
 // ===================== INIT =====================
 const savedUserId = localStorage.getItem('uvc_current_user');
-if (savedUserId) {
-    enterDashboard();
-} else {
-    showLogin();
-}
+if (savedUserId) { enterDashboard(); } else { showLogin(); }
+
+// Poll for new messages (user side)
+setInterval(function() {
+    if (currentUser && document.getElementById('user-chat-panel').classList.contains('show')) {
+        renderUserChat();
+    }
+    if (currentUser) { updateUserUnreadCount(); }
+}, 3000);
 </script>
 </body>
 </html>

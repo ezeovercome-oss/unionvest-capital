@@ -4,11 +4,7 @@
   "description": "Premium Investment Platform Demo",
   "main": "main.html",
   "scripts": {
-    "start": "npx serve -s . -l $PORT",
-    "build": "echo 'Static site - no build needed'"
-  },
-  "dependencies": {
-    "serve": "^14.2.1"
+    "start": "node -e \"const http=require('http'),fs=require('fs'),path=require('path');const server=http.createServer((req,res)=>{let f='.'+req.url;if(f==='./')f='./main.html';fs.readFile(f,(err,data)=>{if(err){res.writeHead(404);return res.end('Not Found');}const ext=path.extname(f);const types={'.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json'};res.writeHead(200,{'Content-Type':types[ext]||'text/plain'});res.end(data);});});server.listen(process.env.PORT||3000);\""
   },
   "engines": {
     "node": ">=18.0.0"
